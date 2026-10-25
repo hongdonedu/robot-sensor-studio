@@ -196,7 +196,7 @@ label.f{display:block;font-size:13px;font-weight:700;color:var(--ink-2);margin-b
 <div class="toast" id="toast" role="status"></div>
 <div id="modalHost"></div>
 
-<script src="config.js?v=1"></script>
+<script src="config.js?v=2"></script>
 <script>
 /* ---------- 데이터 ---------- */
 const SENSORS = {
@@ -230,7 +230,8 @@ const store = {
   get(k,d){ try{ const v=localStorage.getItem('rss-'+k); return v==null?d:JSON.parse(v);}catch(e){return d;} },
   set(k,v){ try{ localStorage.setItem('rss-'+k, JSON.stringify(v)); }catch(e){} }
 };
-let me = store.get('me', {name:'', group:'', cls:CLS_DEFAULT});
+let me = store.get('me', {num:'', name:'', group:'', cls:CLS_DEFAULT});
+const who = m => (m.num?m.num+'번 ':'')+(m.name||'');
 let explore = store.get('explore', {});      // {ir:{predict, a, b, note}}
 let myIdeas = store.get('myIdeas', []);
 let reacted = store.get('reacted', {});     // {postId: {like:1}}
@@ -281,7 +282,7 @@ function renderNav(){
     b.innerHTML=`<span class="num">${d[s.id]?'✓':i}</span><span>${s.icon} ${s.title}</span>`; b.onclick=()=>go(s.id); n.appendChild(b); });
   const c=Object.values(d).filter(Boolean).length-(d.meet?1:0); const tot=STEPS.length-1;
   $('#prog').style.width=(c/tot*100)+'%'; $('#progText').textContent=`${c} / ${tot} 완료`;
-  $('#meName').textContent= me.name ? `${me.name}` : '이름을 정해 주세요';
+  $('#meName').textContent= me.name ? who(me) : '학번과 이름을 적어 주세요';
   $('#meGroup').textContent= `${me.cls||CLS_DEFAULT}반 ${me.group? '· '+me.group+'모둠':''}${teacher?' · 선생님':''}`;
 }
 function go(id){ cur=id; store.set('step',id); try{ history.replaceState(null,'','#'+id);}catch(e){} closeSide(); render(); window.scrollTo({top:0}); }
@@ -299,9 +300,10 @@ const views = {
   meet(){
     return head('meet') + `
     <div class="hero"><img class="bg" src="assets/hero.webp" alt=""><div class="in"><span class="tag">2026. 11. 4. 공개수업 · 7단원 로봇과 융합 기술 · 5/9차시</span><h1>로봇은 무엇으로 느낄까?</h1><p>네오봇의 센서 4개를 탐험하고, 센서로 만들 로봇을 상상해 봐요</p></div></div>
-    <div class="card"><h3>탐험대원 등록</h3><p class="muted">기록과 아이디어에 이 이름이 붙어요. 별명도 좋아요.</p>
+    <div class="card"><h3>탐험대원 등록</h3><p class="muted">학번과 이름을 치고 들어와요. 기록과 아이디어에 이 이름이 붙어요.</p>
       <div class="grid3" style="margin-top:10px">
-        <div class="field"><label class="f" for="inName">이름(별명)</label><input type="text" id="inName" maxlength="12" placeholder="예: 홍길동" value="${esc(me.name)}"></div>
+        <div class="field"><label class="f" for="inNum">학번(번호)</label><input type="number" id="inNum" inputmode="numeric" min="1" max="40" placeholder="예: 7" value="${esc(me.num)}"></div>
+        <div class="field"><label class="f" for="inName">이름</label><input type="text" id="inName" maxlength="12" placeholder="예: 홍길동" value="${esc(me.name)}"></div>
         <div class="field"><label class="f" for="inGroup">모둠</label><select id="inGroup">${['','1','2','3','4','5','6'].map(g=>`<option value="${g}" ${me.group===g?'selected':''}>${g?g+'모둠':'모둠 선택'}</option>`).join('')}</select></div>
         <div class="field"><label class="f" for="inCls">반</label><input type="text" id="inCls" maxlength="6" value="${esc(me.cls||CLS_DEFAULT)}"></div>
       </div>
@@ -385,7 +387,7 @@ function ideaCard(p, mine=false){
   const btn=(kind,icon,label)=>`<button data-react="${kind}" data-id="${p.id}" class="${r[kind]?'on':''}" ${mine||r[kind]?'disabled':''}>${icon} ${label} ${p[kind+'s']||0}</button>`;
   return `<div class="card idea-card ${p.hidden?'is-hidden':''}" style="--c:var(--${k});--cs:var(--${k}-soft);${p.hidden?'opacity:.5':''}">
     ${teacher&&!mine?`<button class="hide-btn" data-hide="${p.id}" data-h="${p.hidden?0:1}">${p.hidden?'보이기':'숨기기'}</button>`:''}
-    <div class="who"><span>${s.icon} ${s.name}</span><span>${esc(p.name)} · ${p.group?esc(p.group)+'모둠':''}</span></div>
+    <div class="who"><span>${s.icon} ${s.name}</span><span>${esc(who(p))} · ${p.group?esc(p.group)+'모둠':''}</span></div>
     <div class="robot">${esc(p.robot||'이름 없는 로봇')}</div>
     <div class="body"><b>${esc(p.situation)}</b> → ${esc(p.action)}</div>
     <div class="react">${btn('like','👍','센서 활용')}${btn('wow','❤️','기발해요')}${btn('want','🤖','만들고 싶어')}</div></div>`;
@@ -397,7 +399,7 @@ function render(){
   renderNav();
   const v=$('#view'); v.innerHTML = views[cur](); bindMenu();
   if(cur==='meet'){
-    $('#saveMe').onclick=()=>{ me={name:$('#inName').value.trim(), group:$('#inGroup').value, cls:$('#inCls').value.trim()||CLS_DEFAULT}; if(!me.name){toast('이름(별명)을 적어 주세요'); $('#inName').focus(); return;} store.set('me',me); toast(`${me.name} 대원, 환영해요!`); go('learn'); };
+    $('#saveMe').onclick=()=>{ const num=String(parseInt($('#inNum').value,10)||''); me={num, name:$('#inName').value.trim(), group:$('#inGroup').value, cls:$('#inCls').value.trim()||CLS_DEFAULT}; if(!me.num){toast('학번(번호)을 적어 주세요'); $('#inNum').focus(); return;} if(!me.name){toast('이름을 적어 주세요'); $('#inName').focus(); return;} store.set('me',me); toast(`${who(me)} 대원, 환영해요!`); go('learn'); };
   }
   if(cur==='explore'){
     v.querySelectorAll('.mission').forEach(card=>{ const k=card.dataset.k; explore[k]=explore[k]||{};
@@ -413,11 +415,11 @@ function render(){
     $('#ideaChips').querySelectorAll('.chip').forEach(c=>c.onclick=()=>{ d.sensor=c.dataset.s; $('#ideaChips').querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===c)); store.set('ideaDraft',d); updateSentence(); });
     $('#seedBtn').onclick=()=>{ const w=SEEDS.where[Math.floor(Math.random()*SEEDS.where.length)], h=SEEDS.who[Math.floor(Math.random()*SEEDS.who.length)]; const k=SKEY[Math.floor(Math.random()*4)]; d.seed=`${w} ${h} · ${SENSORS[k].icon} ${SENSORS[k].name}로…`; $('#seedText').textContent=d.seed; store.set('ideaDraft',d); };
     $('#clearIdea').onclick=()=>{ ideaDraft={sensor:'',sit:'',act:'',robot:'',seed:''}; store.set('ideaDraft',ideaDraft); render(); };
-    $('#sendIdea').onclick=async()=>{ sync(); if(!me.name){ toast('먼저 [만나기]에서 이름을 정해 주세요'); return; } if(!d.sensor){toast('센서를 하나 골라 주세요');return;} if(!d.sit.trim()||!d.act.trim()){toast('상황과 로봇의 움직임을 적어 주세요');return;}
+    $('#sendIdea').onclick=async()=>{ sync(); if(!me.name){ toast('먼저 [만나기]에서 학번과 이름을 적어 주세요'); return; } if(!d.sensor){toast('센서를 하나 골라 주세요');return;} if(!d.sit.trim()||!d.act.trim()){toast('상황과 로봇의 움직임을 적어 주세요');return;}
       const btn=$('#sendIdea'); btn.disabled=true; btn.textContent='보내는 중…';
-      try{ const res=await board.send({action:'post', name:me.name, group:me.group, cls:me.cls, sensor:d.sensor, situation:d.sit.trim(), act:d.act.trim(), robot:d.robot.trim()});
+      try{ const res=await board.send({action:'post', num:me.num, name:me.name, group:me.group, cls:me.cls, sensor:d.sensor, situation:d.sit.trim(), act:d.act.trim(), robot:d.robot.trim()});
         if(!res.ok) throw new Error(res.error||'전송 실패');
-        myIdeas.unshift({id:res.id, name:me.name, group:me.group, sensor:d.sensor, situation:d.sit.trim(), action:d.act.trim(), robot:d.robot.trim(), likes:0,wows:0,wants:0}); store.set('myIdeas',myIdeas);
+        myIdeas.unshift({id:res.id, num:me.num, name:me.name, group:me.group, sensor:d.sensor, situation:d.sit.trim(), action:d.act.trim(), robot:d.robot.trim(), likes:0,wows:0,wants:0}); store.set('myIdeas',myIdeas);
         ideaDraft={sensor:d.sensor,sit:'',act:'',robot:'',seed:d.seed}; store.set('ideaDraft',ideaDraft); toast('전시관에 올렸어요! 하나 더 떠올려 볼까요? 💡'); render();
       }catch(e){ toast('보내지 못했어요: '+(e.message||'연결을 확인해 주세요')); btn.disabled=false; btn.textContent='전시관에 보내기 🚀'; }
     };
@@ -454,7 +456,7 @@ $('#teacherBtn').onclick=()=>{
   const rd=$('#resetDev'); if(rd) rd.onclick=()=>{ try{ Object.keys(localStorage).filter(k=>k.startsWith('rss-')&&k!=='rss-teacher').forEach(k=>localStorage.removeItem(k)); }catch(e){} me={name:'',group:'',cls:CLS_DEFAULT}; explore={}; myIdeas=[]; reacted={}; reflect={c1:false,c2:false,c3:false,line:''}; ideaDraft={sensor:'',sit:'',act:'',robot:'',seed:''}; host.innerHTML=''; toast('이 태블릿의 기록을 지웠어요'); go('meet'); };
   if(teacher){
     $('#offTeacher').onclick=()=>{ teacher=false; store.set('teacher',false); host.innerHTML=''; renderNav(); toast('선생님 모드를 껐어요'); };
-    $('#csvBtn').onclick=async()=>{ try{ const all=await board.list(); const rows=[['시간','이름','모둠','반','센서','상황','로봇 동작','로봇 이름','👍','❤️','🤖','숨김'].join('\t')].concat(all.map(p=>[p.time||'',p.name,p.group,p.cls||'',SENSORS[p.sensor]?SENSORS[p.sensor].name:p.sensor,p.situation,p.action,p.robot,p.likes||0,p.wows||0,p.wants||0,p.hidden?'숨김':''].map(x=>String(x??'').replace(/\t|\n/g,' ')).join('\t'))).join('\n');
+    $('#csvBtn').onclick=async()=>{ try{ const all=await board.list(); const rows=[['시간','학번','이름','모둠','반','센서','상황','로봇 동작','로봇 이름','👍','❤️','🤖','숨김'].join('\t')].concat(all.map(p=>[p.time||'',p.num||'',p.name,p.group,p.cls||'',SENSORS[p.sensor]?SENSORS[p.sensor].name:p.sensor,p.situation,p.action,p.robot,p.likes||0,p.wows||0,p.wants||0,p.hidden?'숨김':''].map(x=>String(x??'').replace(/\t|\n/g,' ')).join('\t'))).join('\n');
       await navigator.clipboard.writeText(rows); toast(`아이디어 ${all.length}개를 복사했어요. 시트에 붙여 넣으세요.`); }catch(e){ toast('복사하지 못했어요 (브라우저 권한)'); } };
     try{ if(window.QRCode) new QRCode($('#qr'), {text:url, width:180, height:180}); else $('#qr').textContent='QR 라이브러리를 불러오지 못했어요'; }catch(e){}
   }else{

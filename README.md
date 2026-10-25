@@ -19,7 +19,7 @@
 1. 새 구글 시트를 만들고 **확장 프로그램 → Apps Script**
 2. 원래 코드를 지우고 `apps-script/Code.gs` 내용을 통째로 붙여 넣기 → 저장
 3. **배포 → 새 배포 → 웹 앱** (실행 사용자: 나 / 액세스: 모든 사용자) → 배포 → 권한 승인
-4. 웹 앱 URL을 `config.js` 의 `BOARD_API_URL` 에 붙여 넣고, `index.html` 의 `config.js?v=1` 을 `v=2` 로 바꾸기
+4. 웹 앱 URL을 `config.js` 의 `BOARD_API_URL` 에 붙여 넣고, `index.html` 의 `config.js?v=2` 를 `v=3` 으로 바꾸기
 
 연결 전에는 '미리보기 모드'(그 태블릿 안에만 저장)로 동작하므로 혼자 연습해 볼 수 있습니다.
 

@@ -12,10 +12,10 @@
  */
 
 const TEACHER_KEY = '2022';   // 선생님 모드 비밀번호 (config.js 의 TEACHER_KEY 와 같게)
-const LIMIT = { name: 12, group: 4, cls: 6, situation: 40, action: 40, robot: 16 };
+const LIMIT = { num: 3, name: 12, group: 4, cls: 6, situation: 40, action: 40, robot: 16 };
 const SENSORS = ['ir', 'light', 'sound', 'touch'];
 const BLOCKED = ['바보', '멍청', '죽어', '꺼져', '병신', '시발', '씨발', 'ㅅㅂ', 'ㅂㅅ', '개새', '존나', '좆', '지랄', '닥쳐', '찐따', '애미', '느금'];
-const HEAD = ['id', 'time', 'name', 'group', 'cls', 'sensor', 'situation', 'action', 'robot', 'likes', 'wows', 'wants', 'hidden'];
+const HEAD = ['id', 'time', 'num', 'name', 'group', 'cls', 'sensor', 'situation', 'action', 'robot', 'likes', 'wows', 'wants', 'hidden'];
 
 function doGet(e) {
   const p = (e && e.parameter) || {};
@@ -40,7 +40,7 @@ function doPost(e) {
 
 function listAll(isTeacher) {
   const posts = rows().filter(r => r.id && (isTeacher || !truthy(r.hidden))).map(r => ({
-    id: String(r.id), time: iso(r.time), name: String(r.name), group: String(r.group || ''), cls: String(r.cls || ''),
+    id: String(r.id), time: iso(r.time), num: String(r.num || ''), name: String(r.name), group: String(r.group || ''), cls: String(r.cls || ''),
     sensor: String(r.sensor), situation: String(r.situation), action: String(r.action), robot: String(r.robot || ''),
     likes: Number(r.likes) || 0, wows: Number(r.wows) || 0, wants: Number(r.wants) || 0, hidden: truthy(r.hidden)
   }));
@@ -50,12 +50,12 @@ function listAll(isTeacher) {
 
 function addPost(b) {
   const name = clean(b.name, LIMIT.name), situation = clean(b.situation, LIMIT.situation), action = clean(b.act, LIMIT.action);
-  const robot = clean(b.robot, LIMIT.robot), group = clean(b.group, LIMIT.group), cls = clean(b.cls, LIMIT.cls);
+  const num = clean(b.num, LIMIT.num), robot = clean(b.robot, LIMIT.robot), group = clean(b.group, LIMIT.group), cls = clean(b.cls, LIMIT.cls);
   const sensor = SENSORS.indexOf(b.sensor) >= 0 ? b.sensor : '';
   if (!name || !situation || !action || !sensor) return { ok: false, error: '이름, 센서, 상황, 로봇의 움직임을 모두 적어 주세요.' };
   if (bad(name + situation + action + robot)) return { ok: false, error: '고운 말로 다시 써 주세요.' };
   const id = 'p' + Utilities.getUuid().replace(/-/g, '').slice(0, 10);
-  sheet().appendRow([id, new Date().toISOString(), name, group, cls, sensor, situation, action, robot, 0, 0, 0, false]);
+  sheet().appendRow([id, new Date().toISOString(), num, name, group, cls, sensor, situation, action, robot, 0, 0, 0, false]);
   return { ok: true, id: id };
 }
 
