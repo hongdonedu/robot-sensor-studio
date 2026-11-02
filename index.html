@@ -225,6 +225,9 @@ select option{color:#111}
 .idea-art{display:flex;gap:10px;align-items:flex-end;justify-content:center;flex-wrap:wrap;margin:6px 0}
 .idea-art img{height:84px;width:auto;object-fit:contain;filter:drop-shadow(0 8px 12px rgba(0,0,0,.45))}
 .seed .seed-ic{width:44px;height:44px;object-fit:contain}
+.chip-ic{width:22px;height:22px;object-fit:contain;vertical-align:-5px}
+.mh{display:flex;align-items:center;gap:8px}.mh-ic{width:40px;height:40px;object-fit:contain}
+.who-ic{width:20px;height:20px;object-fit:contain;vertical-align:-5px}
 @media (max-width:820px){.app-steps{grid-template-columns:1fr}.demo{grid-template-columns:1fr}.mis-row{flex-direction:column;align-items:flex-start}.mis-row .photo{width:100%;max-width:260px}}
 </style>
 </head>
@@ -247,7 +250,7 @@ select option{color:#111}
 <div class="toast" id="toast" role="status"></div>
 <div id="modalHost"></div>
 
-<script src="config.js?v=2"></script>
+<script src="config.js?v=3"></script>
 <script>
 /* ---------- 데이터 ---------- */
 const SENSORS = {
@@ -354,7 +357,7 @@ function head(step, extra=''){
   return `<div class="topbar"><div><div class="eyebrow">${i===0?'시작':'활동 '+i} · 6학년 3반 실과</div><h2>${pic(s.img,s.icon,'h-ic')} ${s.title}</h2></div><div class="row"><button class="btn menu-toggle" id="menuBtn">☰ 순서</button>${extra}</div></div>`;
 }
 function bindMenu(){ const b=$('#menuBtn'); if(b) b.onclick=()=>{ $('#sidebar').classList.add('open'); $('#scrim').hidden=false; }; }
-function sensorChip(k, on, attrs=''){ const s=SENSORS[k]; return `<button type="button" class="chip ${on?'on':''}" data-s="${k}" ${attrs}>${s.icon} ${s.name}</button>`; }
+function sensorChip(k, on, attrs=''){ const s=SENSORS[k]; return `<button type="button" class="chip ${on?'on':''}" data-s="${k}" ${attrs}>${pic(s.img,s.icon,'chip-ic')} ${s.name}</button>`; }
 
 /* ---------- 화면 ---------- */
 const views = {
@@ -396,7 +399,7 @@ const views = {
     const ex = SKEY.map(k=>{const s=SENSORS[k]; const e=explore[k]||{}; const diff=(e.a!=null&&e.b!=null)?(e.b-e.a):null;
       const verdict = diff==null?'':(diff>5?`관찰: ${s.b.replace(' 때','')} 값이 <b>커졌어요</b> (+${diff})`:diff<-5?`관찰: ${s.b.replace(' 때','')} 값이 <b>작아졌어요</b> (${diff})`:'관찰: 값이 거의 안 바뀌었어요. 센서를 더 가까이/세게 해 볼까요?');
       const match = (e.predict&&diff!=null) ? ((e.predict==='up'&&diff>5)||(e.predict==='down'&&diff<-5)?' · 예측이 맞았어요! 🎯':(Math.abs(diff)<=5?'':' · 예측과 달랐네요. 왜 그럴까요? 🤔')) : '';
-      return `<div class="card mission" style="--c:var(--${k});--cs:var(--${k}-soft)" data-k="${k}"><div class="row" style="justify-content:space-between"><h3>${s.icon} ${s.name} 미션</h3><span class="pill">${e.note?'✓ 기록 완료':'기록 전'}</span></div><div class="mis-row"><span class="photo"><img src="${s.mis}" alt="${s.name} 실험 모습" loading="lazy"></span><p class="muted">${s.mission}</p></div>
+      return `<div class="card mission" style="--c:var(--${k});--cs:var(--${k}-soft)" data-k="${k}"><div class="row" style="justify-content:space-between"><h3 class="mh">${pic(s.img,s.icon,'mh-ic')} ${s.name} 미션</h3><span class="pill">${e.note?'✓ 기록 완료':'기록 전'}</span></div><div class="mis-row"><span class="photo"><img src="${s.mis}" alt="${s.name} 실험 모습" loading="lazy"></span><p class="muted">${s.mission}</p></div>
       <div class="steps">
         <div class="step"><b>1 예측</b><div class="tiny" style="margin-bottom:6px">${s.ask}</div><div class="seg"><button data-p="up" class="${e.predict==='up'?'on':''}">커진다 ↑</button><button data-p="down" class="${e.predict==='down'?'on':''}">작아진다 ↓</button><button data-p="same" class="${e.predict==='same'?'on':''}">그대로</button></div></div>
         <div class="step"><b>2 관찰</b><div class="tiny">${s.a}</div><div class="gauge"><input type="range" min="0" max="100" value="${e.a??50}" data-r="a" id="r_${k}_a"><output>${e.a??'–'}</output></div><div class="tiny">${s.b}</div><div class="gauge"><input type="range" min="0" max="100" value="${e.b??50}" data-r="b" id="r_${k}_b"><output>${e.b??'–'}</output></div>${verdict?`<div class="verdict">${verdict}${match}</div>`:''}</div>
@@ -455,7 +458,7 @@ function ideaCard(p, mine=false){
   const btn=(kind,icon,label)=>`<button data-react="${kind}" data-id="${p.id}" class="${r[kind]?'on':''}" ${mine||r[kind]?'disabled':''}>${icon} ${label} ${p[kind+'s']||0}</button>`;
   return `<div class="card idea-card ${p.hidden?'is-hidden':''}" style="--c:var(--${k});--cs:var(--${k}-soft);${p.hidden?'opacity:.5':''}">
     ${teacher&&!mine?`<button class="hide-btn" data-hide="${p.id}" data-h="${p.hidden?0:1}">${p.hidden?'보이기':'숨기기'}</button>`:''}
-    <div class="who"><span>${s.icon} ${s.name}</span><span>${esc(who(p))} · ${p.group?esc(p.group)+'모둠':''}</span></div>
+    <div class="who"><span>${pic(s.img,s.icon,'who-ic')} ${s.name}</span><span>${esc(who(p))} · ${p.group?esc(p.group)+'모둠':''}</span></div>
     <div class="robot">${esc(p.robot||'이름 없는 로봇')}</div>
     <div class="body"><b>${esc(p.situation)}</b> → ${esc(p.action)}</div>
     <div class="react">${btn('like','👍','센서 활용')}${btn('wow','❤️','기발해요')}${btn('want','🤖','만들고 싶어')}</div></div>`;
