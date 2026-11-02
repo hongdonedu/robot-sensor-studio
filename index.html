@@ -175,6 +175,57 @@ label.f{display:block;font-size:13px;font-weight:700;color:var(--ink-2);margin-b
   .menu-toggle{display:inline-flex}
   .scrim{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:29}
 }
+
+/* ===== 2학기 업그레이드: 탐험대 게임 화풍(모터 탐험대와 같은 톤, 빛의 미로 느낌) ===== */
+:root,:root[data-theme="light"],:root[data-theme="dark"]{
+  --bg:#0a0f2c; --paper:rgba(22,29,74,.86); --paper-2:rgba(255,255,255,.07); --line:rgba(255,255,255,.13); --line-2:rgba(255,255,255,.24);
+  --ink:#f3f4ff; --ink-2:#c3c9ee; --ink-3:#8f98c9;
+  --side:rgba(7,10,32,.92); --side-ink:#e9edff; --side-dim:#8e97c8; --side-hover:rgba(255,255,255,.07); --side-active:rgba(255,211,107,.16);
+  --accent:#ffd36b; --accent-ink:#ffd36b; --accent-soft:rgba(255,211,107,.16);
+  --sky:#7fd1ff; --sky-soft:rgba(127,209,255,.14);
+  --ir:#ff6b6b; --ir-soft:rgba(255,107,107,.16); --light:#ffb703; --light-soft:rgba(255,183,3,.16); --sound:#5b9dff; --sound-soft:rgba(91,157,255,.18); --touch:#3ddc84; --touch-soft:rgba(61,220,132,.16);
+  --shadow:0 14px 40px rgba(0,0,0,.45); color-scheme:dark;
+}
+body{background:radial-gradient(1200px 600px at 85% -10%,rgba(139,92,246,.28),transparent 60%),radial-gradient(900px 500px at -10% 110%,rgba(56,189,248,.18),transparent 60%),#0a0f2c;background-attachment:fixed}
+.sidebar{backdrop-filter:blur(10px);border-right:1px solid var(--line)}
+.brand img,.me img{background:transparent;object-fit:contain}
+.brand b{color:#ffd36b}
+.nav button[aria-current="page"]{border:1px solid rgba(255,211,107,.4)}
+.nav .nav-ic{width:26px;height:26px;object-fit:contain;vertical-align:-7px;margin-right:2px}
+.progress i{background:linear-gradient(90deg,#ffd36b,#ff9a5c)}
+.topbar h2{color:#ffd36b;display:flex;align-items:center;gap:10px}
+.topbar h2 .h-ic{width:52px;height:52px;object-fit:contain;filter:drop-shadow(0 6px 12px rgba(0,0,0,.5))}
+.card{backdrop-filter:blur(8px)}
+.card h3{color:#fff}
+.btn.primary{background:linear-gradient(135deg,#ffd36b,#ff9a5c);color:#2a1a05;box-shadow:0 6px 22px rgba(255,180,80,.35)}
+.btn.sky{background:linear-gradient(135deg,#7fd1ff,#3a8bff)}
+.pill,.chip,.seg button,.react button{background:rgba(255,255,255,.06);color:var(--ink)}
+input[type=text],input[type=number],textarea,select{background:rgba(255,255,255,.08);color:var(--ink)}
+select option{color:#111}
+.hero{min-height:320px}
+.hero .in{background:linear-gradient(180deg,rgba(10,15,44,0) 0%,rgba(10,15,44,.94) 72%)}
+.hero h1{background:linear-gradient(180deg,#fff6d6,#ffd36b 50%,#ff9a5c);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 4px 14px rgba(255,170,80,.45));text-shadow:none}
+.step{background:rgba(255,255,255,.06)}
+.photo{display:block;background:#fff;border-radius:14px;padding:6px;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.photo img{display:block;width:100%;height:auto;border-radius:9px}
+.sen-top{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.sensor .ic{width:64px;height:64px;background:var(--cs);flex:none}
+.sensor .ic img{width:56px;height:56px;object-fit:contain}
+.sensor .mod{height:64px;width:auto;max-width:130px;object-fit:contain;border-radius:12px;background:#fff;padding:4px;margin-left:auto}
+.app-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:8px}
+.app-steps .step{display:block}
+.app-steps .photo{margin:6px 0 8px}
+.step strong,.tiny b{color:#ffd36b}
+.sen-top h3{white-space:nowrap;margin:0}
+.mis-row{display:flex;gap:14px;align-items:center;margin-top:6px}
+.mis-row .photo{width:150px;flex:none}
+.fact{margin-top:10px;padding:10px 12px;border-radius:12px;background:rgba(127,209,255,.10);border:1px dashed rgba(127,209,255,.5);font-size:14.5px}
+.fact b{color:#ffd36b}
+.demo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin-top:10px}
+.idea-art{display:flex;gap:10px;align-items:flex-end;justify-content:center;flex-wrap:wrap;margin:6px 0}
+.idea-art img{height:84px;width:auto;object-fit:contain;filter:drop-shadow(0 8px 12px rgba(0,0,0,.45))}
+.seed .seed-ic{width:44px;height:44px;object-fit:contain}
+@media (max-width:820px){.app-steps{grid-template-columns:1fr}.demo{grid-template-columns:1fr}.mis-row{flex-direction:column;align-items:flex-start}.mis-row .photo{width:100%;max-width:260px}}
 </style>
 </head>
 <body>
@@ -210,13 +261,21 @@ const SENSORS = {
           mission:'눌렀다 뗐을 때 값 확인하기', a:'누르지 않았을 때', b:'눌렀을 때', ask:'누르면 값이 어떻게 될까?'}
 };
 const SKEY = Object.keys(SENSORS);
+/* 2학기 업그레이드: 네오봇 수업용 PPT의 센서 사진·특징 */
+const SENSOR_EXTRA = {
+  ir:    {img:'assets/sensor_ir.webp',    mod:'img/mod_ir.webp',    mis:'img/mis_ir.webp',    look:'빨간색 블록', fact:'물체의 색과 재질에 따라 적외선이 반사되는 정도가 달라요. <b>흰 종이</b>에서 값이 가장 커요. <br>아무것도 없을 때 &lt; 검은색 종이 &lt; 손 &lt; 흰색 종이'},
+  light: {img:'assets/sensor_light.webp', mod:'img/mod_light.webp', mis:'img/mis_light.webp', look:'주황색 블록', fact:'빛의 밝기를 느껴요. <b>어두울수록 0</b>에 가까워지고, <b>밝을수록 100</b>에 가까워져요.'},
+  sound: {img:'assets/sensor_sound.webp', mod:'img/mod_sound.webp', mis:'img/mis_sound.webp', look:'초록색 블록(네모난 마이크 창)', fact:'안에 든 마이크로 소리·바람·충격을 느껴요. 센서를 <b>직접 톡톡 칠 때</b> 값이 가장 커요. <br>큰 소리 &lt; 박수 &lt; 바람 &lt; 충격'},
+  touch: {img:'assets/sensor_touch.webp', mod:'img/mod_touch.webp', mis:'img/mis_touch.webp', look:'초록색 블록(동그란 버튼)', fact:'<b>누르고 있을 때만</b> 켜지는 스위치예요. 누르지 않으면 0, 누르면 값이 확 커지고, 손을 떼면 다시 0이 돼요.'}
+};
+SKEY.forEach(k=>Object.assign(SENSORS[k], SENSOR_EXTRA[k]));
 const STEPS = [
-  {id:'meet', title:'만나기', icon:'🤖'},
-  {id:'learn', title:'센서 알아보기', icon:'🔎'},
-  {id:'explore', title:'센서 탐험', icon:'🧪'},
-  {id:'idea', title:'아이디어 떠올리기', icon:'💡'},
-  {id:'gallery', title:'아이디어 전시관', icon:'🖼️'},
-  {id:'reflect', title:'돌아보기', icon:'⭐'}
+  {id:'meet', title:'만나기', icon:'🤖', img:'assets/moto_bot.webp'},
+  {id:'learn', title:'센서 알아보기', icon:'🔎', img:'assets/scene_magnifier.webp'},
+  {id:'explore', title:'센서 탐험', icon:'🧪', img:'assets/sensor_light.webp'},
+  {id:'idea', title:'아이디어 떠올리기', icon:'💡', img:'assets/scene_bulb.webp'},
+  {id:'gallery', title:'아이디어 전시관', icon:'🖼️', img:'assets/item_star.webp'},
+  {id:'reflect', title:'돌아보기', icon:'⭐', img:'assets/item_trophy.webp'}
 ];
 const SEEDS = {
   where:['우리 교실에서','집 현관에서','놀이터에서','병원에서','깜깜한 밤에','동생 방에서','도서관에서','비 오는 날','급식실에서','할머니 댁에서'],
@@ -265,6 +324,8 @@ const board = {
 /* ---------- 유틸 ---------- */
 const $ = (s,el=document)=>el.querySelector(s);
 const esc = s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* 그림(ChatGPT) → 없으면 이모지로 */
+function pic(src, emo, cls=''){ return `<img class="${cls}" src="${src}" alt="" onerror="this.onerror=null;this.outerHTML='<span class=&quot;${cls}&quot; aria-hidden=&quot;true&quot;>${emo}</span>'">`; }
 let toastT; function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2200); }
 function doneSteps(){
   return {
@@ -279,7 +340,7 @@ function doneSteps(){
 function renderNav(){
   const d=doneSteps(); const n=$('#nav'); n.innerHTML='';
   STEPS.forEach((s,i)=>{ const b=document.createElement('button'); b.className=d[s.id]?'done':''; if(s.id===cur) b.setAttribute('aria-current','page');
-    b.innerHTML=`<span class="num">${d[s.id]?'✓':i}</span><span>${s.icon} ${s.title}</span>`; b.onclick=()=>go(s.id); n.appendChild(b); });
+    b.innerHTML=`<span class="num">${d[s.id]?'✓':i}</span><span>${pic(s.img,s.icon,'nav-ic')} ${s.title}</span>`; b.onclick=()=>go(s.id); n.appendChild(b); });
   const c=Object.values(d).filter(Boolean).length-(d.meet?1:0); const tot=STEPS.length-1;
   $('#prog').style.width=(c/tot*100)+'%'; $('#progText').textContent=`${c} / ${tot} 완료`;
   $('#meName').textContent= me.name ? who(me) : '학번과 이름을 적어 주세요';
@@ -290,7 +351,7 @@ function closeSide(){ $('#sidebar').classList.remove('open'); $('#scrim').hidden
 $('#scrim').onclick=closeSide;
 function head(step, extra=''){
   const i=STEPS.findIndex(s=>s.id===step); const s=STEPS[i];
-  return `<div class="topbar"><div><div class="eyebrow">${i===0?'시작':'활동 '+i} · 6학년 3반 실과</div><h2>${s.icon} ${s.title}</h2></div><div class="row"><button class="btn menu-toggle" id="menuBtn">☰ 순서</button>${extra}</div></div>`;
+  return `<div class="topbar"><div><div class="eyebrow">${i===0?'시작':'활동 '+i} · 6학년 3반 실과</div><h2>${pic(s.img,s.icon,'h-ic')} ${s.title}</h2></div><div class="row"><button class="btn menu-toggle" id="menuBtn">☰ 순서</button>${extra}</div></div>`;
 }
 function bindMenu(){ const b=$('#menuBtn'); if(b) b.onclick=()=>{ $('#sidebar').classList.add('open'); $('#scrim').hidden=false; }; }
 function sensorChip(k, on, attrs=''){ const s=SENSORS[k]; return `<button type="button" class="chip ${on?'on':''}" data-s="${k}" ${attrs}>${s.icon} ${s.name}</button>`; }
@@ -299,7 +360,7 @@ function sensorChip(k, on, attrs=''){ const s=SENSORS[k]; return `<button type="
 const views = {
   meet(){
     return head('meet') + `
-    <div class="hero"><img class="bg" src="assets/hero.webp" alt=""><div class="in"><span class="tag">2026. 11. 4. 공개수업 · 7단원 로봇과 융합 기술 · 5/9차시</span><h1>로봇은 무엇으로 느낄까?</h1><p>네오봇의 센서 4개를 탐험하고, 센서로 만들 로봇을 상상해 봐요</p></div></div>
+    <div class="hero"><img class="bg" src="assets/sensor_keyart.jpg" onerror="this.onerror=null;this.src='assets/hero.webp'" alt=""><div class="in"><span class="tag">2026. 11. 4. 공개수업 · 7단원 로봇과 융합 기술 · 5/9차시</span><h1>로봇은 무엇으로 느낄까?</h1><p>네오봇의 센서 4개를 탐험하고, 센서로 만들 로봇을 상상해 봐요</p></div></div>
     <div class="card"><h3>탐험대원 등록</h3><p class="muted">학번과 이름을 치고 들어와요. 기록과 아이디어에 이 이름이 붙어요.</p>
       <div class="grid3" style="margin-top:10px">
         <div class="field"><label class="f" for="inNum">학번(번호)</label><input type="number" id="inNum" inputmode="numeric" min="1" max="40" placeholder="예: 7" value="${esc(me.num)}"></div>
@@ -311,7 +372,7 @@ const views = {
     <div class="card"><h3>오늘 할 일</h3>
       <div class="grid2" style="margin-top:8px">
         <div class="step"><b>🔎 1. 센서 알아보기</b>적외선 · 빛 · 소리 · 접촉 센서가 무엇을 느끼는지 알아봐요.</div>
-        <div class="step"><b>🧪 2. 센서 탐험</b>스마트패드 앱의 [센서 값 확인] 화면을 보며 예측 → 관찰 → 설명!</div>
+        <div class="step"><b>🧪 2. 센서 탐험</b>스마트패드 앱 화면 위쪽 IN 칸의 센서값을 보며 예측 → 관찰 → 설명!</div>
         <div class="step"><b>💡 3. 아이디어 떠올리기</b>"이 센서로 어떤 로봇을 만들까?" 많이, 다양하게, 엉뚱하게!</div>
         <div class="step"><b>🖼️ 4. 아이디어 전시관</b>친구 아이디어에 ❤️ 👍 🤖 반응을 남겨요.</div>
       </div></div>`;
@@ -320,24 +381,30 @@ const views = {
     store.set('learnSeen',true);
     return head('learn') + `
     <div class="card"><h3>사람은 감각 기관으로, 로봇은 센서로 느껴요</h3><p class="muted">눈·귀·피부가 보고 듣고 만지는 것처럼, 로봇의 센서는 주변 정보를 <b>숫자(0~100)</b>로 바꿔 로봇에게 알려 줘요. 로봇은 그 숫자를 보고 스스로 판단해서 움직여요.</p></div>
-    <div class="grid2">${SKEY.map(k=>{const s=SENSORS[k];return `<div class="card sensor" style="--c:var(--${k});--cs:var(--${k}-soft)"><div class="ic">${s.icon}</div><h3>${s.name}</h3>
-      <dl><dt>무엇을</dt><dd>${s.sees}</dd><dt>어떻게</dt><dd>${s.how}</dd><dt>생활 속</dt><dd>${s.life}</dd></dl></div>`}).join('')}</div>
+    <div class="grid2">${SKEY.map(k=>{const s=SENSORS[k];return `<div class="card sensor" style="--c:var(--${k});--cs:var(--${k}-soft)"><div class="sen-top"><div class="ic">${pic(s.img,s.icon)}</div><h3>${s.name}</h3><img class="mod" src="${s.mod}" alt="${s.name} 모듈 사진" loading="lazy"></div>
+      <dl><dt>생김새</dt><dd>${s.look}</dd><dt>무엇을</dt><dd>${s.sees}</dd><dt>어떻게</dt><dd>${s.how}</dd><dt>생활 속</dt><dd>${s.life}</dd></dl></div>`}).join('')}</div>
     <div class="card"><h3>스마트패드 앱 연결하기</h3>
-      <div class="grid3" style="margin-top:8px"><div class="step"><b>① 동글 꽂기</b>스마트패드에 스마트 동글을 꽂으면 앱이 자동으로 실행돼요.</div><div class="step"><b>② 로봇 켜기</b>네오봇의 전원을 켜고 앱과 연결되는지 확인해요.</div><div class="step"><b>③ [센서 값 확인]</b>화면에서 센서 4개의 값이 0~100으로 보여요.</div></div>
+      <div class="app-steps">
+        <div class="step"><b>① 동글 꽂기</b><span class="photo"><img src="img/app_otg.webp" alt="OTG에 스마트 동글을 끼워 패드에 꽂는 사진" loading="lazy"></span>OTG에 동글을 끼워 패드에 꽂으면 앱이 <strong>자동으로 실행</strong>돼요.</div>
+        <div class="step"><b>② 로봇 켜기</b><span class="photo"><img src="img/app_auto.webp" alt="컨트롤러 전원을 켜면 자동 연결되는 사진" loading="lazy"></span>전원 버튼을 0.5초 누르면 <strong>파란 LED</strong>가 켜지며 자동으로 연결돼요.</div>
+        <div class="step"><b>③ 센서값 보기</b><span class="photo"><img src="img/app_screen.webp" alt="앱 화면 위쪽에 IN1, IN2, IN3 센서값이 보이는 모습" loading="lazy"></span>센서를 <strong>IN 포트</strong>에 꽂으면 화면 위쪽 <strong>IN1·IN2·IN3</strong> 칸에 값(0~100)이 실시간으로 보여요.</div>
+      </div>
+      <p class="tiny" style="margin-top:10px">🔧 연결이 안 되면: 파란 LED가 깜빡이지 않고 <b>계속 켜질 때까지</b> 잠시 기다려요. 그래도 안 되면 전원을 껐다 켜거나 동글을 다시 꽂아요.</p>
       <div class="row" style="margin-top:14px"><button class="btn primary big" onclick="go('explore')">준비 끝! 탐험하러 가기 →</button></div></div>`;
   },
   explore(){
     const ex = SKEY.map(k=>{const s=SENSORS[k]; const e=explore[k]||{}; const diff=(e.a!=null&&e.b!=null)?(e.b-e.a):null;
       const verdict = diff==null?'':(diff>5?`관찰: ${s.b.replace(' 때','')} 값이 <b>커졌어요</b> (+${diff})`:diff<-5?`관찰: ${s.b.replace(' 때','')} 값이 <b>작아졌어요</b> (${diff})`:'관찰: 값이 거의 안 바뀌었어요. 센서를 더 가까이/세게 해 볼까요?');
       const match = (e.predict&&diff!=null) ? ((e.predict==='up'&&diff>5)||(e.predict==='down'&&diff<-5)?' · 예측이 맞았어요! 🎯':(Math.abs(diff)<=5?'':' · 예측과 달랐네요. 왜 그럴까요? 🤔')) : '';
-      return `<div class="card mission" style="--c:var(--${k});--cs:var(--${k}-soft)" data-k="${k}"><div class="row" style="justify-content:space-between"><h3>${s.icon} ${s.name} 미션</h3><span class="pill">${e.note?'✓ 기록 완료':'기록 전'}</span></div><p class="muted">${s.mission}</p>
+      return `<div class="card mission" style="--c:var(--${k});--cs:var(--${k}-soft)" data-k="${k}"><div class="row" style="justify-content:space-between"><h3>${s.icon} ${s.name} 미션</h3><span class="pill">${e.note?'✓ 기록 완료':'기록 전'}</span></div><div class="mis-row"><span class="photo"><img src="${s.mis}" alt="${s.name} 실험 모습" loading="lazy"></span><p class="muted">${s.mission}</p></div>
       <div class="steps">
         <div class="step"><b>1 예측</b><div class="tiny" style="margin-bottom:6px">${s.ask}</div><div class="seg"><button data-p="up" class="${e.predict==='up'?'on':''}">커진다 ↑</button><button data-p="down" class="${e.predict==='down'?'on':''}">작아진다 ↓</button><button data-p="same" class="${e.predict==='same'?'on':''}">그대로</button></div></div>
         <div class="step"><b>2 관찰</b><div class="tiny">${s.a}</div><div class="gauge"><input type="range" min="0" max="100" value="${e.a??50}" data-r="a" id="r_${k}_a"><output>${e.a??'–'}</output></div><div class="tiny">${s.b}</div><div class="gauge"><input type="range" min="0" max="100" value="${e.b??50}" data-r="b" id="r_${k}_b"><output>${e.b??'–'}</output></div>${verdict?`<div class="verdict">${verdict}${match}</div>`:''}</div>
         <div class="step"><b>3 설명</b><div class="tiny" style="margin-bottom:6px">왜 그렇게 되었을까? 알게 된 점 한 줄</div><textarea data-note id="n_${k}" placeholder="예: 손을 대면 적외선이 반사되어 돌아와서 값이 커진다">${esc(e.note||'')}</textarea><div class="row" style="margin-top:8px"><button class="btn primary" data-save>기록 저장</button></div></div>
-      </div></div>`;}).join('');
+      </div>${diff!=null?`<div class="fact">📘 <b>알아 두기</b> ${s.fact}</div>`:''}</div>`;}).join('');
     return head('explore') + `<div class="card"><h3>예측 → 관찰 → 설명</h3><p class="muted">패드 화면의 센서값(0~100)을 보고 슬라이더를 맞춰요. 숫자가 정확하지 않아도 괜찮아요. <b>왜 바뀌는지</b> 말하는 게 진짜 미션!</p></div>${ex}
-    <div class="card"><h3>센서가 느끼면 로봇은 움직여요</h3><p class="muted">선생님 시연: <b>빛 센서가 어두워지면 → LED 켜기</b>. 센서값이 바뀌면 로봇이 스스로 판단해서 동작해요. 이제 여러분 차례!</p><div class="row" style="margin-top:10px"><button class="btn primary big" onclick="go('idea')">아이디어 떠올리러 가기 →</button></div></div>`;
+    <div class="card"><h3>센서가 느끼면 로봇은 움직여요</h3><p class="muted">선생님 시연: <b>빛 센서가 어두워지면 → LED 켜기</b>. 센서값이 바뀌면 로봇이 스스로 판단해서 동작해요. 이제 여러분 차례!</p>
+      <div class="demo"><span class="photo"><img src="img/code_light.webp" alt="빛 센서 값이 50 이하면 LED 켜기, 50보다 크면 LED 끄기 코드" loading="lazy"></span><span class="photo"><img src="img/lantern.webp" alt="어두워지면 자동으로 켜지는 랜턴 로봇" loading="lazy"></span></div><div class="row" style="margin-top:10px"><button class="btn primary big" onclick="go('idea')">아이디어 떠올리러 가기 →</button></div></div>`;
   },
   idea(){
     const d = ideaDraft;
@@ -345,7 +412,8 @@ const views = {
     return head('idea', `<span class="pill">보낸 아이디어 ${myIdeas.length}개</span>`) + `
     <div class="card"><h3>브레인스토밍 규칙</h3><div class="row"><span class="pill">🌊 많이</span><span class="pill">🌈 다양하게</span><span class="pill">🤪 엉뚱해도 좋아요</span><span class="pill">➕ 친구 아이디어에 보태기</span><span class="pill">🚫 평가는 나중에</span></div></div>
     <div class="card idea-form"><h3>센서로 만드는 로봇 아이디어</h3>
-      <div class="seed"><span class="s">🎲 아이디어 씨앗:</span><span id="seedText">${esc(d.seed||'버튼을 눌러 씨앗을 뽑아 봐요')}</span><button class="btn" id="seedBtn">씨앗 뽑기</button></div>
+      <div class="idea-art" aria-hidden="true">${['scene_dog','scene_vacuum','scene_bulb'].map(n=>`<img src="assets/${n}.webp" alt="" onerror="this.remove()">`).join('')}</div>
+      <div class="seed"><img class="seed-ic" src="assets/scene_bulb.webp" alt="" onerror="this.remove()"><span class="s">🎲 아이디어 씨앗:</span><span id="seedText">${esc(d.seed||'버튼을 눌러 씨앗을 뽑아 봐요')}</span><button class="btn" id="seedBtn">씨앗 뽑기</button></div>
       <label class="f" style="margin-top:14px">① 어떤 센서로?</label><div class="chips" id="ideaChips">${SKEY.map(k=>sensorChip(k,d.sensor===k)).join('')}</div>
       <div class="grid2" style="margin-top:12px">
         <div class="field"><label class="f" for="iSit">② 이런 상황에서 (센서가 느끼면)</label><input type="text" class="big-in" id="iSit" maxlength="40" placeholder="예: 박수를 치면" value="${esc(d.sit)}"></div>
