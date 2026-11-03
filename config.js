@@ -6,7 +6,7 @@
   비워 두면 '미리보기 모드'(그 태블릿 안에만 저장)로 동작해요.
   ※ 이 파일을 바꾸면 index.html 의 config.js?v= 숫자도 바꿔 주세요(브라우저 캐시 때문).
 */
-window.BOARD_API_URL = "";
+window.BOARD_API_URL = "https://script.google.com/macros/s/AKfycbxe9i7yyMBllRYJpdRhyYldYOE_HkSSieXxoWs94oEjD0W7Kg9mb4G8_Qo-ANBqgUSAnQ/exec";
 window.TEACHER_KEY = "2022"; // 선생님 메뉴 비밀번호 (apps-script/Code.gs 의 TEACHER_KEY 와 같게)
 
 window.SHEET_URL = "https://docs.google.com/spreadsheets/d/1YseDw7IZTRhzjVR-7HTl2ysbib2-F2okhrUnDP6jin4/edit"; // 기록이 모이는 구글 시트(선생님만 열 수 있음)
