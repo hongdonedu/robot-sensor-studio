@@ -228,6 +228,10 @@ select option{color:#111}
 .modal .box{background:#151d4d;border:1px solid rgba(255,255,255,.18)}
 .modal{background:rgba(5,8,25,.72)}
 .modal .box.notes-box{max-width:720px}
+.idea-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:14px}
+.ic-col{display:flex;flex-direction:column;gap:12px}
+.ic-col .chips{min-height:46px}
+@media (max-width:700px){.idea-cols{grid-template-columns:1fr}}
 .brand b{font-size:17px;white-space:nowrap}
 .notes{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:10px}
 .note{background:rgba(255,255,255,.07);border:1px solid var(--line-2);border-radius:14px;padding:10px 12px}
@@ -493,15 +497,17 @@ const views = {
     <div class="card idea-form"><h3>센서로 만드는 로봇 아이디어</h3>
       <div class="idea-art" aria-hidden="true">${['scene_dog','scene_vacuum','scene_bulb'].map(n=>`<img src="assets/${n}.webp" alt="" onerror="this.remove()">`).join('')}</div>
       <div class="seed"><img class="seed-ic" src="assets/scene_bulb.webp" alt="" onerror="this.remove()"><span class="s">🎲 아이디어 씨앗:</span><span id="seedText">${esc(d.seed||'버튼을 눌러 씨앗을 뽑아 봐요')}</span><button class="btn" id="seedBtn">씨앗 뽑기</button></div>
-      <label class="f" style="margin-top:14px">① 어떤 센서로?</label><div class="chips" id="ideaChips">${SKEY.map(k=>sensorChip(k,d.sensor===k)).join('')}</div>
-      <div class="grid2" style="margin-top:12px">
-        <div class="field"><label class="f" for="iSit">② 이런 상황에서 (센서가 느끼면)</label><input type="text" class="big-in" id="iSit" maxlength="40" placeholder="예: 박수를 치면" value="${esc(d.sit)}"></div>
-        <div class="field"><label class="f" for="iAct">③ 로봇이 이렇게 움직여요</label><input type="text" class="big-in" id="iAct" maxlength="40" placeholder="예: 꼬리를 흔들며 달려와요" value="${esc(d.act)}"></div>
+      <div class="idea-cols">
+        <div class="ic-col">
+          <div class="field"><label class="f">① 어떤 센서로?</label><div class="chips" id="ideaChips">${SKEY.map(k=>sensorChip(k,d.sensor===k)).join('')}</div></div>
+          <div class="field"><label class="f" for="iSit">② 이런 상황에서 (센서가 느끼면)</label><input type="text" class="big-in" id="iSit" maxlength="40" placeholder="예: 박수를 치면" value="${esc(d.sit)}"></div>
+        </div>
+        <div class="ic-col">
+          <div class="field"><label class="f" for="iAct">③ 로봇이 이렇게 움직여요</label><input type="text" class="big-in" id="iAct" maxlength="40" placeholder="예: 꼬리를 흔들며 달려와요" value="${esc(d.act)}"></div>
+          <div class="field"><label class="f" for="iRobot">④ 로봇 이름</label><input type="text" class="big-in" id="iRobot" maxlength="16" placeholder="예: 박수 강아지 로봇" value="${esc(d.robot)}"></div>
+        </div>
       </div>
-      <div class="grid2" style="margin-top:12px">
-        <div class="field"><label class="f" for="iRobot">④ 로봇 이름</label><input type="text" class="big-in" id="iRobot" maxlength="16" placeholder="예: 박수 강아지 로봇" value="${esc(d.robot)}"></div>
-        <div class="field"><label class="f">⑤ 완성된 문장</label><div class="sentence" id="sentence"></div></div>
-      </div>
+      <div class="field" style="margin-top:14px"><label class="f">⑤ 완성된 문장</label><div class="sentence" id="sentence"></div></div>
       <div class="row" style="margin-top:14px"><button class="btn primary big" id="sendIdea">전시관에 보내기 🚀</button><button class="btn ghost" id="clearIdea">비우기</button><span class="tiny">${board.mode==='cloud'?'우리 반 전시관에 바로 올라가요.':'미리보기 모드: 이 태블릿에만 저장돼요.'}</span></div>
     </div>
     ${mine?`<h3 style="font-size:20px">내가 보낸 아이디어</h3><div class="grid2">${mine}</div>`:''}`;
@@ -539,8 +545,10 @@ function ideaCard(p, mine=false){
     <div class="body"><b>${esc(p.situation)}</b> → ${esc(p.action)}</div>
     <div class="react">${btn('like','👍','센서 활용')}${btn('wow','❤️','기발해요')}${btn('want','🤖','만들고 싶어')}</div></div>`;
 }
+function josa(w,a,b){ const c=(w||'').trim().slice(-1).charCodeAt(0); if(!(c>=0xAC00&&c<=0xD7A3)) return a+'('+b+')'; return (c-0xAC00)%28?a:b; }
 function updateSentence(){ const d=ideaDraft; const s=SENSORS[d.sensor]; const el=$('#sentence'); if(!el) return;
-  el.innerHTML = `<b>${s?s.name:'( 센서 )'}</b>가 <b>${esc(d.sit)||'( 이런 상황 )'}</b>을/를 느끼면, <b>${esc(d.robot)||'( 로봇 이름 )'}</b>이 <b>${esc(d.act)||'( 이렇게 움직여요 )'}</b>`; }
+  const robot=esc(d.robot)||'( 로봇 이름 )';
+  el.innerHTML = `<b>${esc(d.sit)||'( 이런 상황에서 )'}</b> <b>${s?s.name:'( 센서 )'}</b>가 느끼고, <b>${robot}</b>${d.robot?josa(d.robot,'이','가'):'이(가)'} <b>${esc(d.act)||'( 이렇게 움직여요 )'}</b>`; }
 
 function render(){
   renderNav();
