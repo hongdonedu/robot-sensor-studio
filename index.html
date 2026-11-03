@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>센서 탐험대 스튜디오</title>
+<title>명진초 센서 탐험대</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="icon" href="assets/mascot.webp">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
@@ -225,6 +225,15 @@ select option{color:#111}
 .idea-art{display:flex;gap:10px;align-items:flex-end;justify-content:center;flex-wrap:wrap;margin:6px 0}
 .idea-art img{height:84px;width:auto;object-fit:contain;filter:drop-shadow(0 8px 12px rgba(0,0,0,.45))}
 .seed .seed-ic{width:44px;height:44px;object-fit:contain}
+.modal .box{background:#151d4d;border:1px solid rgba(255,255,255,.18)}
+.modal{background:rgba(5,8,25,.72)}
+.modal .box.notes-box{max-width:720px}
+.brand b{font-size:17px;white-space:nowrap}
+.notes{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:10px}
+.note{background:rgba(255,255,255,.07);border:1px solid var(--line-2);border-radius:14px;padding:10px 12px}
+.note.mine{border-color:#ffd36b;background:rgba(255,211,107,.12)}
+.note .who{font-size:13px;color:var(--ink-3);font-weight:700}
+.note .nt{font-size:16px;margin:4px 0}
 .chip-ic{width:22px;height:22px;object-fit:contain;vertical-align:-5px}
 .mh{display:flex;align-items:center;gap:8px}.mh-ic{width:40px;height:40px;object-fit:contain}
 .who-ic{width:20px;height:20px;object-fit:contain;vertical-align:-5px}
@@ -234,7 +243,7 @@ select option{color:#111}
 <body>
 <div class="app">
   <aside class="sidebar" id="sidebar" aria-label="수업 순서">
-    <div class="brand"><img src="assets/mascot.webp" alt=""><div><b>센서 탐험대</b><small>6학년 실과 · 로봇과 융합 기술</small></div></div>
+    <div class="brand"><img src="assets/mascot.webp" alt=""><div><b>명진초 센서 탐험대</b><small>6학년 실과 · 로봇과 융합 기술</small></div></div>
     <div class="side-label">오늘의 순서</div>
     <nav class="nav" id="nav"></nav>
     <div class="side-foot">
@@ -272,6 +281,15 @@ const SENSOR_EXTRA = {
   touch: {img:'assets/sensor_touch.webp', mod:'img/mod_touch.webp', mis:'img/mis_touch.webp', look:'초록색 블록(동그란 버튼)', fact:'<b>누르고 있을 때만</b> 켜지는 스위치예요. 누르지 않으면 0, 누르면 값이 확 커지고, 손을 떼면 다시 0이 돼요.'}
 };
 SKEY.forEach(k=>Object.assign(SENSORS[k], SENSOR_EXTRA[k]));
+/* 적외선: 네 가지를 차례로 재서 순서 비교 (PPT: 아무것도 없을 때 < 검은색 종이 < 손 < 흰색 종이) */
+Object.assign(SENSORS.ir, {
+  mission:'센서 앞 1cm쯤에 검은색 종이 · 손 · 흰색 종이를 차례로 대 보고 값을 비교하기 (거리는 똑같이!)',
+  ask:'어떤 것을 가까이 댔을 때 값이 가장 클까?',
+  predOpts:[['black','검은색 종이'],['hand','손'],['white','흰색 종이']],
+  conds:[{key:'none',label:'아무것도 없을 때',short:'없음'},{key:'black',label:'검은색 종이를 댔을 때',short:'검은 종이'},{key:'hand',label:'손을 댔을 때',short:'손'},{key:'white',label:'흰색 종이를 댔을 때',short:'흰 종이'}],
+  order:['none','black','hand','white'],
+  hint:'예: 흰 종이는 적외선을 많이 반사해서 값이 가장 크고, 검은 종이는 적외선을 흡수해서 값이 작다'
+});
 const STEPS = [
   {id:'meet', title:'만나기', icon:'🤖', img:'assets/moto_bot.webp'},
   {id:'learn', title:'센서 알아보기', icon:'🔎', img:'assets/scene_magnifier.webp'},
@@ -324,6 +342,47 @@ const board = {
   }
 };
 
+/* ---------- 기록 보내기(선생님 구글 시트) ---------- */
+/* 인터넷이 끊겨도 기록은 패드에 쌓아 두었다가 다음에 다시 보냄 */
+function logRec(kind, data){
+  if(!me||!me.name) return;
+  const rec = Object.assign({action:'log', kind, num:me.num, name:me.name, group:me.group, cls:me.cls, at:new Date().toISOString()}, data);
+  const q = store.get('logQueue', []); q.push(rec); store.set('logQueue', q.slice(-300));
+  flushLogs();
+}
+let flushing=false;
+async function flushLogs(){
+  if(board.mode!=='cloud' || flushing) return; flushing=true;
+  try{ let q=store.get('logQueue',[]); while(q.length){ const r=await board.send(q[0]); if(!r||!r.ok) break; q.shift(); store.set('logQueue',q); } }catch(e){}
+  finally{ flushing=false; }
+}
+window.addEventListener('online', flushLogs); setInterval(flushLogs, 30000);
+
+/* ---------- 우리 반 생각 모음 ---------- */
+async function fetchNotes(k){
+  if(board.mode!=='cloud'){ const e=explore[k]||{}; return e.note?[{name:me.name,num:me.num,group:me.group,note:e.note,values:'',time:''}]:[]; }
+  await flushLogs();
+  const r = await fetch(API+'?action=notes&sensor='+encodeURIComponent(k)+'&t='+Date.now(), {redirect:'follow'});
+  const d = await r.json(); if(!d.ok) throw new Error(d.error||'불러오지 못했어요'); return d.notes||[];
+}
+function valuesText(k, v){
+  try{ const o=JSON.parse(v||'{}'); const conds=SENSORS[k].conds||[{key:'a',short:SENSORS[k].a},{key:'b',short:SENSORS[k].b}];
+    return conds.filter(c=>o[c.key]!==''&&o[c.key]!=null).map(c=>`${c.short||c.label} ${o[c.key]}`).join(' · '); }catch(e){ return ''; }
+}
+async function openNotes(k){
+  const s=SENSORS[k]; const host=$('#modalHost');
+  const draw=(body)=>{ host.innerHTML=`<div class="modal" id="modal"><div class="box notes-box"><h3>${pic(s.img,s.icon,'mh-ic')} ${s.name} · 우리 반 생각 모음</h3><p class="tiny">친구들은 왜 그렇게 되었다고 생각했을까요? 나와 같은 생각, 다른 생각을 찾아봐요.</p>${body}
+    <div class="row" style="margin-top:14px;justify-content:flex-end"><button class="btn" id="nReload">🔄 새로고침</button><button class="btn ghost" id="mClose">닫기</button></div></div></div>`;
+    $('#mClose').onclick=()=>host.innerHTML=''; $('#modal').onclick=e=>{ if(e.target.id==='modal') host.innerHTML=''; }; $('#nReload').onclick=()=>openNotes(k); };
+  draw('<div class="empty">불러오는 중…</div>');
+  try{
+    const list=await fetchNotes(k);
+    const body = list.length ? `<div class="notes">${list.map(n=>`<div class="note ${n.name===me.name&&String(n.num)===String(me.num)?'mine':''}"><div class="who">${esc(n.group?n.group+'모둠 ':'')}${esc(n.num?n.num+'번 ':'')}${esc(n.name)}</div><div class="nt">${esc(n.note)}</div>${n.values?`<div class="tiny">${esc(valuesText(k,n.values))}</div>`:''}</div>`).join('')}</div>`
+      : '<div class="empty">아직 올라온 생각이 없어요. 조금 뒤 새로고침해 보세요.</div>';
+    draw(body + (board.mode==='cloud'?'':'<p class="tiny">미리보기 모드라 이 태블릿의 기록만 보여요.</p>'));
+  }catch(e){ draw(`<div class="empty">생각 모음을 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침해 주세요.</div>`); }
+}
+
 /* ---------- 유틸 ---------- */
 const $ = (s,el=document)=>el.querySelector(s);
 const esc = s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -371,7 +430,7 @@ const views = {
         <div class="field"><label class="f" for="inGroup">모둠</label><select id="inGroup">${['','1','2','3','4','5','6'].map(g=>`<option value="${g}" ${me.group===g?'selected':''}>${g?g+'모둠':'모둠 선택'}</option>`).join('')}</select></div>
         <div class="field"><label class="f" for="inCls">반</label><input type="text" id="inCls" maxlength="6" value="${esc(me.cls||CLS_DEFAULT)}"></div>
       </div>
-      <div class="row" style="margin-top:12px"><button class="btn primary big" id="saveMe">탐험 시작!</button><span class="tiny">저장은 이 태블릿 안에만 돼요.</span></div></div>
+      <div class="row" style="margin-top:12px"><button class="btn primary big" id="saveMe">탐험 시작!</button><span class="tiny">${board.mode==='cloud'?'탐험 기록은 선생님께도 저장돼요.':'저장은 이 태블릿 안에만 돼요.'}</span></div></div>
     <div class="card"><h3>오늘 할 일</h3>
       <div class="grid2" style="margin-top:8px">
         <div class="step"><b>🔎 1. 센서 알아보기</b>적외선 · 빛 · 소리 · 접촉 센서가 무엇을 느끼는지 알아봐요.</div>
@@ -396,15 +455,32 @@ const views = {
       <div class="row" style="margin-top:14px"><button class="btn primary big" onclick="go('explore')">준비 끝! 탐험하러 가기 →</button></div></div>`;
   },
   explore(){
-    const ex = SKEY.map(k=>{const s=SENSORS[k]; const e=explore[k]||{}; const diff=(e.a!=null&&e.b!=null)?(e.b-e.a):null;
-      const verdict = diff==null?'':(diff>5?`관찰: ${s.b.replace(' 때','')} 값이 <b>커졌어요</b> (+${diff})`:diff<-5?`관찰: ${s.b.replace(' 때','')} 값이 <b>작아졌어요</b> (${diff})`:'관찰: 값이 거의 안 바뀌었어요. 센서를 더 가까이/세게 해 볼까요?');
-      const match = (e.predict&&diff!=null) ? ((e.predict==='up'&&diff>5)||(e.predict==='down'&&diff<-5)?' · 예측이 맞았어요! 🎯':(Math.abs(diff)<=5?'':' · 예측과 달랐네요. 왜 그럴까요? 🤔')) : '';
+    const ex = SKEY.map(k=>{const s=SENSORS[k]; const e=explore[k]||{};
+      const conds = s.conds || [{key:'a',label:s.a},{key:'b',label:s.b}];
+      const vals = conds.map(c=>e[c.key]); const allSet = vals.every(v=>v!=null);
+      let verdict='', match='';
+      if(s.conds){
+        if(allSet){
+          const sorted = conds.map((c,i)=>({c, v:vals[i]})).sort((x,y)=>x.v-y.v);
+          verdict = `관찰한 순서: ${sorted.map(x=>`${x.c.short} <strong>${x.v}</strong>`).join(' &lt; ')}`;
+          const top = sorted[sorted.length-1].c.key;
+          match = e.predict ? (e.predict===top ? ' · 예측이 맞았어요! 🎯' : ' · 예측과 달랐네요. 왜 그럴까요? 🤔') : '';
+          verdict += sorted.map(x=>x.c.key).join()===s.order.join() ? '<br>네오봇 자료와 같은 순서예요! 👏' : '<br>순서가 조금 다르네요. 센서와의 거리를 똑같이 맞춰 다시 재 볼까요?';
+        }
+      } else {
+        const diff=(e.a!=null&&e.b!=null)?(e.b-e.a):null;
+        if(diff!=null){
+          verdict = diff>5?`관찰: ${s.b.replace(' 때','')} 값이 <strong>커졌어요</strong> (+${diff})`:diff<-5?`관찰: ${s.b.replace(' 때','')} 값이 <strong>작아졌어요</strong> (${diff})`:'관찰: 값이 거의 안 바뀌었어요. 센서를 더 가까이/세게 해 볼까요?';
+          match = e.predict ? ((e.predict==='up'&&diff>5)||(e.predict==='down'&&diff<-5)?' · 예측이 맞았어요! 🎯':(Math.abs(diff)<=5?'':' · 예측과 달랐네요. 왜 그럴까요? 🤔')) : '';
+        }
+      }
+      const opts = s.predOpts || [['up','커진다 ↑'],['down','작아진다 ↓'],['same','그대로']];
       return `<div class="card mission" style="--c:var(--${k});--cs:var(--${k}-soft)" data-k="${k}"><div class="row" style="justify-content:space-between"><h3 class="mh">${pic(s.img,s.icon,'mh-ic')} ${s.name} 미션</h3><span class="pill">${e.note?'✓ 기록 완료':'기록 전'}</span></div><div class="mis-row"><span class="photo"><img src="${s.mis}" alt="${s.name} 실험 모습" loading="lazy"></span><p class="muted">${s.mission}</p></div>
       <div class="steps">
-        <div class="step"><b>1 예측</b><div class="tiny" style="margin-bottom:6px">${s.ask}</div><div class="seg"><button data-p="up" class="${e.predict==='up'?'on':''}">커진다 ↑</button><button data-p="down" class="${e.predict==='down'?'on':''}">작아진다 ↓</button><button data-p="same" class="${e.predict==='same'?'on':''}">그대로</button></div></div>
-        <div class="step"><b>2 관찰</b><div class="tiny">${s.a}</div><div class="gauge"><input type="range" min="0" max="100" value="${e.a??50}" data-r="a" id="r_${k}_a"><output>${e.a??'–'}</output></div><div class="tiny">${s.b}</div><div class="gauge"><input type="range" min="0" max="100" value="${e.b??50}" data-r="b" id="r_${k}_b"><output>${e.b??'–'}</output></div>${verdict?`<div class="verdict">${verdict}${match}</div>`:''}</div>
-        <div class="step"><b>3 설명</b><div class="tiny" style="margin-bottom:6px">왜 그렇게 되었을까? 알게 된 점 한 줄</div><textarea data-note id="n_${k}" placeholder="예: 손을 대면 적외선이 반사되어 돌아와서 값이 커진다">${esc(e.note||'')}</textarea><div class="row" style="margin-top:8px"><button class="btn primary" data-save>기록 저장</button></div></div>
-      </div>${diff!=null?`<div class="fact">📘 <b>알아 두기</b> ${s.fact}</div>`:''}</div>`;}).join('');
+        <div class="step"><b>1 예측</b><div class="tiny" style="margin-bottom:6px">${s.ask}</div><div class="seg">${opts.map(o=>`<button data-p="${o[0]}" class="${e.predict===o[0]?'on':''}">${o[1]}</button>`).join('')}</div></div>
+        <div class="step"><b>2 관찰</b>${conds.map(c=>`<div class="tiny">${c.label}</div><div class="gauge"><input type="range" min="0" max="100" value="${e[c.key]??50}" data-r="${c.key}" id="r_${k}_${c.key}"><output>${e[c.key]??'–'}</output></div>`).join('')}${verdict?`<div class="verdict">${verdict}${match}</div>`:''}</div>
+        <div class="step"><b>3 설명</b><div class="tiny" style="margin-bottom:6px">왜 그렇게 되었을까? 자신의 설명 적기</div><textarea data-note id="n_${k}" placeholder="내 생각을 적어 보세요">${esc(e.draft??e.note??'')}</textarea><div class="row" style="margin-top:8px"><button class="btn primary" data-save>기록 저장</button><button class="btn sky" data-notes ${e.note?'':'disabled'} title="${e.note?'':'기록을 저장하면 열려요'}">👀 우리 반 생각 모음</button></div>${e.note?'':'<div class="tiny" style="margin-top:6px">기록을 저장하면 친구들의 생각을 볼 수 있어요.</div>'}</div>
+      </div>${allSet&&e.note?`<div class="fact">📘 <b>알아 두기</b> ${s.fact}</div>`:''}</div>`;}).join('');
     return head('explore') + `<div class="card"><h3>예측 → 관찰 → 설명</h3><p class="muted">패드 화면의 센서값(0~100)을 보고 슬라이더를 맞춰요. 숫자가 정확하지 않아도 괜찮아요. <b>왜 바뀌는지</b> 말하는 게 진짜 미션!</p></div>${ex}
     <div class="card"><h3>센서가 느끼면 로봇은 움직여요</h3><p class="muted">선생님 시연: <b>빛 센서가 어두워지면 → LED 켜기</b>. 센서값이 바뀌면 로봇이 스스로 판단해서 동작해요. 이제 여러분 차례!</p>
       <div class="demo"><span class="photo"><img src="img/code_light.webp" alt="빛 센서 값이 50 이하면 LED 켜기, 50보다 크면 LED 끄기 코드" loading="lazy"></span><span class="photo"><img src="img/lantern.webp" alt="어두워지면 자동으로 켜지는 랜턴 로봇" loading="lazy"></span></div><div class="row" style="margin-top:10px"><button class="btn primary big" onclick="go('idea')">아이디어 떠올리러 가기 →</button></div></div>`;
@@ -470,13 +546,19 @@ function render(){
   renderNav();
   const v=$('#view'); v.innerHTML = views[cur](); bindMenu();
   if(cur==='meet'){
-    $('#saveMe').onclick=()=>{ const num=String(parseInt($('#inNum').value,10)||''); me={num, name:$('#inName').value.trim(), group:$('#inGroup').value, cls:$('#inCls').value.trim()||CLS_DEFAULT}; if(!me.num){toast('학번(번호)을 적어 주세요'); $('#inNum').focus(); return;} if(!me.name){toast('이름을 적어 주세요'); $('#inName').focus(); return;} store.set('me',me); toast(`${who(me)} 대원, 환영해요!`); go('learn'); };
+    $('#saveMe').onclick=()=>{ const num=String(parseInt($('#inNum').value,10)||''); me={num, name:$('#inName').value.trim(), group:$('#inGroup').value, cls:$('#inCls').value.trim()||CLS_DEFAULT}; if(!me.num){toast('학번(번호)을 적어 주세요'); $('#inNum').focus(); return;} if(!me.name){toast('이름을 적어 주세요'); $('#inName').focus(); return;} store.set('me',me); logRec('join',{}); toast(`${who(me)} 대원, 환영해요!`); go('learn'); };
   }
   if(cur==='explore'){
     v.querySelectorAll('.mission').forEach(card=>{ const k=card.dataset.k; explore[k]=explore[k]||{};
       card.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{ explore[k].predict=b.dataset.p; store.set('explore',explore); render(); });
       card.querySelectorAll('input[type=range]').forEach(r=>{ r.oninput=()=>{ r.nextElementSibling.value=r.value; }; r.onchange=()=>{ explore[k][r.dataset.r]=+r.value; store.set('explore',explore); render(); }; });
-      card.querySelector('[data-save]').onclick=()=>{ explore[k].note=card.querySelector('[data-note]').value.trim(); store.set('explore',explore); toast(explore[k].note?`${SENSORS[k].name} 기록 저장!`:'알게 된 점을 한 줄 적어 주세요'); render(); };
+      const ta=card.querySelector('[data-note]'); ta.oninput=()=>{ explore[k].draft=ta.value; store.set('explore',explore); };
+      card.querySelector('[data-save]').onclick=()=>{ const e=explore[k]; e.note=ta.value.trim(); delete e.draft; store.set('explore',explore);
+        if(!e.note){ toast('알게 된 점을 한 줄 적어 주세요'); return; }
+        const conds=SENSORS[k].conds||[{key:'a'},{key:'b'}]; const values={}; conds.forEach(c=>values[c.key]=e[c.key]??'');
+        logRec('explore',{sensor:k, predict:e.predict||'', values:JSON.stringify(values), note:e.note});
+        toast(`${SENSORS[k].name} 기록 저장!${board.mode==='cloud'?' 이제 우리 반 생각 모음을 볼 수 있어요 👀':''}`); render(); };
+      const nb=card.querySelector('[data-notes]'); if(nb) nb.onclick=()=>openNotes(k);
     });
   }
   if(cur==='idea'){
@@ -497,7 +579,7 @@ function render(){
   }
   if(cur==='gallery'){ $('#reload').onclick=loadGallery; $('#filterChips').querySelectorAll('.chip').forEach(c=>c.onclick=()=>{ gFilter=c.dataset.s; render(); }); loadGallery(); }
   if(cur==='reflect'){
-    $('#saveReflect').onclick=()=>{ reflect={c1:$('#c1').checked,c2:$('#c2').checked,c3:$('#c3').checked,line:$('#rLine').value.trim()}; store.set('reflect',reflect); toast(reflect.line?'오늘의 탐험 기록 완료! ⭐':'한 줄을 적어 주세요'); renderNav(); };
+    $('#saveReflect').onclick=()=>{ reflect={c1:$('#c1').checked,c2:$('#c2').checked,c3:$('#c3').checked,line:$('#rLine').value.trim()}; store.set('reflect',reflect); if(reflect.line) logRec('reflect',{values:JSON.stringify({c1:reflect.c1,c2:reflect.c2,c3:reflect.c3}), note:reflect.line}); toast(reflect.line?`오늘의 탐험 기록 완료! ⭐${board.mode==='cloud'?' 선생님께도 보냈어요 📮':''}`:'한 줄을 적어 주세요'); renderNav(); };
   }
 }
 async function loadGallery(){

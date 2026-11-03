@@ -11,15 +11,19 @@
  * 코드를 고친 뒤에는 [배포] → [배포 관리] → 연필 → 버전: 새 버전 → [배포] 해야 반영된다.
  */
 
+const SHEET_ID = '1YseDw7IZTRhzjVR-7HTl2ysbib2-F2okhrUnDP6jin4';       // 시트에서 [확장 프로그램 → Apps Script]로 만들었으면 비워 두기. 따로 만든 스크립트면 시트 주소의 ID를 넣기
 const TEACHER_KEY = '2022';   // 선생님 모드 비밀번호 (config.js 의 TEACHER_KEY 와 같게)
 const LIMIT = { num: 3, name: 12, group: 4, cls: 6, situation: 40, action: 40, robot: 16 };
 const SENSORS = ['ir', 'light', 'sound', 'touch'];
 const BLOCKED = ['바보', '멍청', '죽어', '꺼져', '병신', '시발', '씨발', 'ㅅㅂ', 'ㅂㅅ', '개새', '존나', '좆', '지랄', '닥쳐', '찐따', '애미', '느금'];
 const HEAD = ['id', 'time', 'num', 'name', 'group', 'cls', 'sensor', 'situation', 'action', 'robot', 'likes', 'wows', 'wants', 'hidden'];
+const LOG_HEAD = ['받은 시각', '학생 시각', '반', '모둠', '번호', '이름', '종류', '센서', '예측', '관찰 값', '설명·한 줄'];
+const KIND = { join: '입장', explore: '센서 탐험', reflect: '돌아보기' };
 
 function doGet(e) {
   const p = (e && e.parameter) || {};
   if (p.action === 'ping') return out({ ok: true, time: new Date().toISOString() });
+  if (p.action === 'notes') return out(listNotes(String(p.sensor || '')));
   return out(listAll(p.key === TEACHER_KEY));
 }
 
@@ -33,6 +37,7 @@ function doPost(e) {
       case 'post':  return out(addPost(body));
       case 'react': return out(react(body));
       case 'hide':  return out(setHidden(body));
+      case 'log':   return out(addLog(body));
       default:      return out({ ok: false, error: '알 수 없는 요청이에요.' });
     }
   } finally { lock.releaseLock(); }
@@ -80,9 +85,42 @@ function setHidden(b) {
   return { ok: false, error: '아이디어를 찾을 수 없어요.' };
 }
 
+/* 학생 탐험 기록(입장·센서 탐험·돌아보기) → 'records' 시트 */
+function addLog(b) {
+  const kind = KIND[b.kind] ? b.kind : null;
+  const name = clean(b.name, LIMIT.name);
+  if (!kind || !name) return { ok: false, error: '기록을 읽을 수 없어요.' };
+  const note = clean(b.note, 200);
+  if (bad(note)) return { ok: true, skipped: true };
+  logSheet().appendRow([new Date(), clean(b.at, 30), clean(b.cls, LIMIT.cls), clean(b.group, LIMIT.group), clean(b.num, LIMIT.num), name,
+    KIND[kind], clean(b.sensor, 10), clean(b.predict, 10), clean(b.values, 300), note]);
+  return { ok: true };
+}
+
+/* 우리 반 생각 모음: 센서별로 학생마다 가장 최근 설명 하나씩 */
+function listNotes(sensor) {
+  if (SENSORS.indexOf(sensor) < 0) return { ok: false, error: '센서를 알 수 없어요.' };
+  const data = logSheet().getDataRange().getValues().slice(1);
+  const latest = {};
+  data.forEach(r => {
+    if (r[6] !== KIND.explore || String(r[7]) !== sensor || !r[10]) return;
+    const key = r[2] + '|' + r[4] + '|' + r[5];
+    latest[key] = { cls: String(r[2]), group: String(r[3]), num: String(r[4]), name: String(r[5]), predict: String(r[8]), values: String(r[9]), note: String(r[10]), time: iso(r[0]) };
+  });
+  const notes = Object.keys(latest).map(k => latest[k]).sort((a, b) => (a.time < b.time ? 1 : -1));
+  return { ok: true, notes: notes };
+}
+
 /* ---------- 도우미 ---------- */
+function book() { return SHEET_ID ? SpreadsheetApp.openById(SHEET_ID) : SpreadsheetApp.getActiveSpreadsheet(); }
+function logSheet() {
+  const ss = book();
+  let sh = ss.getSheetByName('records');
+  if (!sh) { sh = ss.insertSheet('records'); sh.appendRow(LOG_HEAD); sh.setFrozenRows(1); }
+  return sh;
+}
 function sheet() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = book();
   let sh = ss.getSheetByName('ideas');
   if (!sh) { sh = ss.insertSheet('ideas'); sh.appendRow(HEAD); sh.setFrozenRows(1); }
   return sh;
