@@ -263,7 +263,7 @@ select option{color:#111}
 <div class="toast" id="toast" role="status"></div>
 <div id="modalHost"></div>
 
-<script src="config.js?v=3"></script>
+<script src="config.js?v=4"></script>
 <script>
 /* ---------- 데이터 ---------- */
 const SENSORS = {
@@ -607,7 +607,7 @@ $('#teacherBtn').onclick=()=>{
   const url = location.href.split('#')[0];
   host.innerHTML = `<div class="modal" id="modal"><div class="box"><h3>🔑 선생님 메뉴</h3>
     ${teacher?`<p class="muted">선생님 모드가 켜져 있어요. 전시관에서 아이디어를 숨길 수 있어요.</p>
-      <div class="row"><button class="btn" id="csvBtn">📋 아이디어 전체 복사(표)</button><button class="btn" id="offTeacher">선생님 모드 끄기</button></div>
+      <div class="row"><button class="btn" id="csvBtn">📋 아이디어 전체 복사(표)</button>${window.SHEET_URL?`<a class="btn" href="${window.SHEET_URL}" target="_blank" rel="noopener">📊 기록 시트 열기</a>`:''}<button class="btn" id="offTeacher">선생님 모드 끄기</button></div>
       <h3 style="font-size:18px;margin-top:16px">접속 QR</h3><p class="tiny">${esc(url)}</p><div class="qr" id="qr"></div>
       <h3 style="font-size:18px;margin-top:16px">이 기기 초기화</h3><p class="tiny">다음 반이 쓰기 전에 이름·기록·아이디어를 지워요.</p><button class="btn" id="resetDev">🧹 이 태블릿 기록 지우기</button>`
     :`<p class="muted">선생님 비밀번호를 입력하세요.</p><input type="text" id="tKey" inputmode="numeric" autocomplete="off"><div class="row" style="margin-top:10px"><button class="btn primary" id="tOk">확인</button><button class="btn" id="resetDev">🧹 이 태블릿 기록 지우기</button></div>`}

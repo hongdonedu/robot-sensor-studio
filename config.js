@@ -8,3 +8,5 @@
 */
 window.BOARD_API_URL = "";
 window.TEACHER_KEY = "2022"; // 선생님 메뉴 비밀번호 (apps-script/Code.gs 의 TEACHER_KEY 와 같게)
+
+window.SHEET_URL = "https://docs.google.com/spreadsheets/d/1YseDw7IZTRhzjVR-7HTl2ysbib2-F2okhrUnDP6jin4/edit"; // 기록이 모이는 구글 시트(선생님만 열 수 있음)
