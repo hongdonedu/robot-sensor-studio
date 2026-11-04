@@ -19,6 +19,9 @@ const BLOCKED = ['바보', '멍청', '죽어', '꺼져', '병신', '시발', '�
 const HEAD = ['id', 'time', 'num', 'name', 'group', 'cls', 'sensor', 'situation', 'action', 'robot', 'likes', 'wows', 'wants', 'hidden'];
 const LOG_HEAD = ['받은 시각', '학생 시각', '반', '모둠', '번호', '이름', '종류', '센서', '예측', '관찰 값', '설명·한 줄'];
 const KIND = { join: '입장', explore: '센서 탐험', reflect: '돌아보기' };
+const CMT_HEAD = ['id', '받은 시각', '아이디어 id', '반', '모둠', '번호', '이름', '종류', '댓글', '숨김'];
+const CTYPE = { good: '칭찬할 점', wow: '인상 깊은 점', tip: '좋은 의견' };
+const API_VERSION = 2;   // 2: 아이디어 댓글
 
 function doGet(e) {
   const p = (e && e.parameter) || {};
@@ -38,6 +41,8 @@ function doPost(e) {
       case 'react': return out(react(body));
       case 'hide':  return out(setHidden(body));
       case 'log':   return out(addLog(body));
+      case 'comment':     return out(addComment(body));
+      case 'hideComment': return out(hideComment(body));
       default:      return out({ ok: false, error: '알 수 없는 요청이에요.' });
     }
   } finally { lock.releaseLock(); }
@@ -50,7 +55,9 @@ function listAll(isTeacher) {
     likes: Number(r.likes) || 0, wows: Number(r.wows) || 0, wants: Number(r.wants) || 0, hidden: truthy(r.hidden)
   }));
   posts.sort((a, b) => (a.time < b.time ? 1 : -1));
-  return { ok: true, posts: posts, teacher: !!isTeacher, now: new Date().toISOString() };
+  const cm = listComments(isTeacher);
+  posts.forEach(p => { p.comments = cm[p.id] || []; });
+  return { ok: true, v: API_VERSION, posts: posts, teacher: !!isTeacher, now: new Date().toISOString() };
 }
 
 function addPost(b) {
@@ -83,6 +90,46 @@ function setHidden(b) {
     if (String(data[i][0]) === String(b.postId)) { sh.getRange(i + 1, col).setValue(!!b.hidden); return { ok: true }; }
   }
   return { ok: false, error: '아이디어를 찾을 수 없어요.' };
+}
+
+/* 친구 아이디어 댓글(칭찬할 점·인상 깊은 점·좋은 의견) → 'comments' 시트 */
+function addComment(b) {
+  const type = CTYPE[b.type] ? b.type : null;
+  const name = clean(b.name, LIMIT.name), text = clean(b.text, 100), postId = clean(b.postId, 20);
+  if (!type || !name || !postId || text.length < 2) return { ok: false, error: '댓글 종류를 고르고 내용을 적어 주세요.' };
+  if (bad(text + name)) return { ok: false, error: '고운 말로 다시 써 주세요.' };
+  const id = 'c' + Utilities.getUuid().replace(/-/g, '').slice(0, 10);
+  cmtSheet().appendRow([id, new Date(), postId, clean(b.cls, LIMIT.cls), clean(b.group, LIMIT.group), clean(b.num, LIMIT.num), name, CTYPE[type], text, false]);
+  return { ok: true, id: id };
+}
+
+function hideComment(b) {
+  if (b.key !== TEACHER_KEY) return { ok: false, error: '선생님만 할 수 있어요.' };
+  const sh = cmtSheet(), data = sh.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === String(b.commentId)) { sh.getRange(i + 1, 10).setValue(!!b.hidden); return { ok: true }; }
+  }
+  return { ok: false, error: '댓글을 찾을 수 없어요.' };
+}
+
+function listComments(isTeacher) {
+  const map = {}, sh = book().getSheetByName('comments');
+  if (!sh) return map;
+  const data = sh.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    const r = data[i]; if (!r[0]) continue;
+    const hidden = truthy(r[9]); if (hidden && !isTeacher) continue;
+    const type = Object.keys(CTYPE).filter(k => CTYPE[k] === String(r[7]))[0] || 'good';
+    (map[String(r[2])] = map[String(r[2])] || []).push({ id: String(r[0]), time: iso(r[1]), cls: String(r[3]), group: String(r[4] || ''),
+      num: String(r[5] || ''), name: String(r[6]), type: type, text: String(r[8]), hidden: hidden });
+  }
+  return map;
+}
+
+function cmtSheet() {
+  const ss = book(); let sh = ss.getSheetByName('comments');
+  if (!sh) { sh = ss.insertSheet('comments'); sh.appendRow(CMT_HEAD); sh.setFrozenRows(1); sh.getRange('D:D').setNumberFormat('@'); }
+  return sh;
 }
 
 /* 학생 탐험 기록(입장·센서 탐험·돌아보기) → 'records' 시트 */
