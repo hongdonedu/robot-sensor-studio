@@ -263,7 +263,7 @@ select option{color:#111}
 <div class="toast" id="toast" role="status"></div>
 <div id="modalHost"></div>
 
-<script src="config.js?v=5"></script>
+<script src="config.js?v=6"></script>
 <script>
 /* ---------- 데이터 ---------- */
 const SENSORS = {
@@ -362,12 +362,17 @@ async function flushLogs(){
 }
 window.addEventListener('online', flushLogs); setInterval(flushLogs, 30000);
 
+/* ---------- 반 구분: 자기 반 기록만 보기 ---------- */
+function normCls(c){ const t=String(c||'').replace(/\s/g,''); const m=t.match(/(\d+)\D+(\d+)/); if(m) return m[1]+'-'+m[2]; const n=t.match(/\d+/); return n?n[0]:t; }
+function myCls(){ return normCls((me&&me.cls)||CLS_DEFAULT); }
+let gCls=null; // 선생님만 다른 반을 골라 볼 수 있음
+
 /* ---------- 우리 반 생각 모음 ---------- */
 async function fetchNotes(k){
   if(board.mode!=='cloud'){ const e=explore[k]||{}; return e.note?[{name:me.name,num:me.num,group:me.group,note:e.note,values:'',time:''}]:[]; }
   await flushLogs();
   const r = await fetch(API+'?action=notes&sensor='+encodeURIComponent(k)+'&t='+Date.now(), {redirect:'follow'});
-  const d = await r.json(); if(!d.ok) throw new Error(d.error||'불러오지 못했어요'); return d.notes||[];
+  const d = await r.json(); if(!d.ok) throw new Error(d.error||'불러오지 못했어요'); return (d.notes||[]).filter(n=>normCls(n.cls)===myCls());
 }
 function valuesText(k, v){
   try{ const o=JSON.parse(v||'{}'); const conds=SENSORS[k].conds||[{key:'a',short:SENSORS[k].a},{key:'b',short:SENSORS[k].b}];
@@ -375,7 +380,7 @@ function valuesText(k, v){
 }
 async function openNotes(k){
   const s=SENSORS[k]; const host=$('#modalHost');
-  const draw=(body)=>{ host.innerHTML=`<div class="modal" id="modal"><div class="box notes-box"><h3>${pic(s.img,s.icon,'mh-ic')} ${s.name} · 우리 반 생각 모음</h3><p class="tiny">친구들은 왜 그렇게 되었다고 생각했을까요? 나와 같은 생각, 다른 생각을 찾아봐요.</p>${body}
+  const draw=(body)=>{ host.innerHTML=`<div class="modal" id="modal"><div class="box notes-box"><h3>${pic(s.img,s.icon,'mh-ic')} ${s.name} · ${esc(myCls())}반 생각 모음</h3><p class="tiny">친구들은 왜 그렇게 되었다고 생각했을까요? 나와 같은 생각, 다른 생각을 찾아봐요.</p>${body}
     <div class="row" style="margin-top:14px;justify-content:flex-end"><button class="btn" id="nReload">🔄 새로고침</button><button class="btn ghost" id="mClose">닫기</button></div></div></div>`;
     $('#mClose').onclick=()=>host.innerHTML=''; $('#modal').onclick=e=>{ if(e.target.id==='modal') host.innerHTML=''; }; $('#nReload').onclick=()=>openNotes(k); };
   draw('<div class="empty">불러오는 중…</div>');
@@ -417,7 +422,7 @@ function closeSide(){ $('#sidebar').classList.remove('open'); $('#scrim').hidden
 $('#scrim').onclick=closeSide;
 function head(step, extra=''){
   const i=STEPS.findIndex(s=>s.id===step); const s=STEPS[i];
-  return `<div class="topbar"><div><div class="eyebrow">${i===0?'시작':'활동 '+i} · 6학년 3반 실과</div><h2>${pic(s.img,s.icon,'h-ic')} ${s.title}</h2></div><div class="row"><button class="btn menu-toggle" id="menuBtn">☰ 순서</button>${extra}</div></div>`;
+  return `<div class="topbar"><div><div class="eyebrow">${i===0?'시작':'활동 '+i} · 6학년 실과</div><h2>${pic(s.img,s.icon,'h-ic')} ${s.title}</h2></div><div class="row"><button class="btn menu-toggle" id="menuBtn">☰ 순서</button>${extra}</div></div>`;
 }
 function bindMenu(){ const b=$('#menuBtn'); if(b) b.onclick=()=>{ $('#sidebar').classList.add('open'); $('#scrim').hidden=false; }; }
 function sensorChip(k, on, attrs=''){ const s=SENSORS[k]; return `<button type="button" class="chip ${on?'on':''}" data-s="${k}" ${attrs}>${pic(s.img,s.icon,'chip-ic')} ${s.name}</button>`; }
@@ -432,7 +437,7 @@ const views = {
         <div class="field"><label class="f" for="inNum">학번(번호)</label><input type="number" id="inNum" inputmode="numeric" min="1" max="40" placeholder="예: 7" value="${esc(me.num)}"></div>
         <div class="field"><label class="f" for="inName">이름</label><input type="text" id="inName" maxlength="12" placeholder="예: 홍길동" value="${esc(me.name)}"></div>
         <div class="field"><label class="f" for="inGroup">모둠</label><select id="inGroup">${['','1','2','3','4','5','6'].map(g=>`<option value="${g}" ${me.group===g?'selected':''}>${g?g+'모둠':'모둠 선택'}</option>`).join('')}</select></div>
-        <div class="field"><label class="f" for="inCls">반</label><input type="text" id="inCls" maxlength="6" value="${esc(me.cls||CLS_DEFAULT)}"></div>
+        <div class="field"><label class="f" for="inCls">반</label><select id="inCls"><option value="">반 선택</option>${[1,2,3,4,5,6,7,8].map(n=>`<option value="6-${n}">6학년 ${n}반</option>`).join('')}</select></div>
       </div>
       <div class="row" style="margin-top:12px"><button class="btn primary big" id="saveMe">탐험 시작!</button><span class="tiny">${board.mode==='cloud'?'탐험 기록은 선생님께도 저장돼요.':'저장은 이 태블릿 안에만 돼요.'}</span></div></div>
     <div class="card"><h3>오늘 할 일</h3>
@@ -514,7 +519,8 @@ const views = {
   },
   gallery(){
     return head('gallery', `<button class="btn" id="reload">🔄 새로고침</button>`) + `
-    <div class="card"><div class="row" style="justify-content:space-between"><div><h3>우리 반 아이디어 전시관</h3><p class="muted">마음에 드는 아이디어에 반응을 남겨요. 센서를 잘 살린 아이디어엔 👍, 기발하면 ❤️, 만들고 싶으면 🤖!</p></div></div>
+    <div class="card"><div class="row" style="justify-content:space-between"><div><h3 id="gHead">${esc(myCls())}반 아이디어 전시관</h3><p class="muted">마음에 드는 아이디어에 반응을 남겨요. 센서를 잘 살린 아이디어엔 👍, 기발하면 ❤️, 만들고 싶으면 🤖!</p></div></div>
+      ${teacher?'<div class="chips" style="margin-top:10px" id="clsChips"></div>':''}
       <div class="chips" style="margin-top:10px" id="filterChips"><button type="button" class="chip ${gFilter==='all'?'on':''}" data-s="all">전체</button>${SKEY.map(k=>sensorChip(k,gFilter===k)).join('')}</div></div>
     <div class="stat" id="gStat"></div>
     <div class="grid2" id="gList"><div class="empty">불러오는 중…</div></div>`;
@@ -554,7 +560,7 @@ function render(){
   renderNav();
   const v=$('#view'); v.innerHTML = views[cur](); bindMenu();
   if(cur==='meet'){
-    $('#saveMe').onclick=()=>{ const num=String(parseInt($('#inNum').value,10)||''); me={num, name:$('#inName').value.trim(), group:$('#inGroup').value, cls:$('#inCls').value.trim()||CLS_DEFAULT}; if(!me.num){toast('학번(번호)을 적어 주세요'); $('#inNum').focus(); return;} if(!me.name){toast('이름을 적어 주세요'); $('#inName').focus(); return;} store.set('me',me); logRec('join',{}); toast(`${who(me)} 대원, 환영해요!`); go('learn'); };
+    $('#saveMe').onclick=()=>{ const nm={num:String(parseInt($('#inNum').value,10)||''), name:$('#inName').value.trim(), group:$('#inGroup').value, cls:$('#inCls').value}; if(!nm.cls){toast('우리 반을 골라 주세요'); $('#inCls').focus(); return;} if(!nm.num){toast('학번(번호)을 적어 주세요'); $('#inNum').focus(); return;} if(!nm.name){toast('이름을 적어 주세요'); $('#inName').focus(); return;} me=nm; store.set('me',me); gCls=null; logRec('join',{}); toast(`${who(me)} 대원, 환영해요!`); go('learn'); };
   }
   if(cur==='explore'){
     v.querySelectorAll('.mission').forEach(card=>{ const k=card.dataset.k; explore[k]=explore[k]||{};
@@ -593,6 +599,12 @@ function render(){
 async function loadGallery(){
   const list=$('#gList'); if(!list) return;
   try{ posts = await board.list(); }catch(e){ list.innerHTML=`<div class="empty">전시관을 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침해 주세요.</div>`; return; }
+  const view = teacher ? (gCls||myCls()) : myCls();
+  const inCls = p => view==='all' || normCls(p.cls)===view;
+  const cc=$('#clsChips'); if(cc){ const all=[...new Set(posts.map(p=>normCls(p.cls)).filter(Boolean))].sort(); if(!all.includes(myCls())) all.unshift(myCls());
+    cc.innerHTML = `<span class="tiny" style="align-self:center">선생님: 반 고르기</span>` + all.map(c=>`<button type="button" class="chip ${view===c?'on':''}" data-cls="${esc(c)}">${esc(c)}반</button>`).join('') + `<button type="button" class="chip ${view==='all'?'on':''}" data-cls="all">전체</button>`;
+    cc.querySelectorAll('[data-cls]').forEach(b=>b.onclick=()=>{ gCls=b.dataset.cls; loadGallery(); }); }
+  posts = posts.filter(inCls); const gh=$('#gHead'); if(gh) gh.textContent = (view==='all'?'전체 반':view+'반')+' 아이디어 전시관';
   const shown = posts.filter(p=>gFilter==='all'||p.sensor===gFilter).filter(p=>teacher||!p.hidden);
   const stat=$('#gStat'); if(stat){ stat.innerHTML = `<div><b>${posts.filter(p=>!p.hidden).length}</b><span>아이디어</span></div>`+SKEY.map(k=>`<div><b>${posts.filter(p=>p.sensor===k&&!p.hidden).length}</b><span>${SENSORS[k].icon} ${SENSORS[k].name}</span></div>`).join(''); }
   list.innerHTML = shown.length ? shown.map(p=>ideaCard(p, myIdeas.some(m=>m.id===p.id))).join('') : `<div class="empty">아직 올라온 아이디어가 없어요. [아이디어 떠올리기]에서 첫 아이디어를 보내 볼까요?</div>`;
