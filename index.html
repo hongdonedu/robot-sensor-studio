@@ -263,7 +263,7 @@ select option{color:#111}
 <div class="toast" id="toast" role="status"></div>
 <div id="modalHost"></div>
 
-<script src="config.js?v=6"></script>
+<script src="config.js?v=7"></script>
 <script>
 /* ---------- 데이터 ---------- */
 const SENSORS = {
@@ -350,7 +350,7 @@ const board = {
 /* 인터넷이 끊겨도 기록은 패드에 쌓아 두었다가 다음에 다시 보냄 */
 function logRec(kind, data){
   if(!me||!me.name) return;
-  const rec = Object.assign({action:'log', kind, num:me.num, name:me.name, group:me.group, cls:me.cls, at:new Date().toISOString()}, data);
+  const rec = Object.assign({action:'log', kind, num:me.num, name:me.name, group:me.group, cls:clsWire(me.cls), at:new Date().toISOString()}, data);
   const q = store.get('logQueue', []); q.push(rec); store.set('logQueue', q.slice(-300));
   flushLogs();
 }
@@ -363,7 +363,13 @@ async function flushLogs(){
 window.addEventListener('online', flushLogs); setInterval(flushLogs, 30000);
 
 /* ---------- 반 구분: 자기 반 기록만 보기 ---------- */
-function normCls(c){ const t=String(c||'').replace(/\s/g,''); const m=t.match(/(\d+)\D+(\d+)/); if(m) return m[1]+'-'+m[2]; const n=t.match(/\d+/); return n?n[0]:t; }
+function normCls(c){
+  // 구글 시트가 "6-3"을 날짜(6월 3일)로 바꿔 저장한 경우도 "6-3"으로 되돌린다
+  let t=String(c||'').trim(); const MON={Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+  let m=t.match(/^[A-Z][a-z]{2},? ([A-Z][a-z]{2}) (\d{1,2}),? \d{4}/); if(m&&MON[m[1]]) return MON[m[1]]+'-'+(+m[2]);
+  if(/^\d{4}-\d{2}-\d{2}T/.test(t)){ const d=new Date(t); if(!isNaN(d)) return (d.getMonth()+1)+'-'+d.getDate(); }
+  t=t.replace(/\s/g,''); m=t.match(/(\d+)\D+(\d+)/); if(m) return (+m[1])+'-'+(+m[2]); const n=t.match(/\d+/); return n?String(+n[0]):t; }
+function clsWire(c){ const v=normCls(c); return v? v+'반' : ''; } // 시트가 날짜로 바꾸지 않도록 "6-3반"으로 보냄
 function myCls(){ return normCls((me&&me.cls)||CLS_DEFAULT); }
 let gCls=null; // 선생님만 다른 반을 골라 볼 수 있음
 
@@ -584,7 +590,7 @@ function render(){
     $('#clearIdea').onclick=()=>{ ideaDraft={sensor:'',sit:'',act:'',robot:'',seed:''}; store.set('ideaDraft',ideaDraft); render(); };
     $('#sendIdea').onclick=async()=>{ sync(); if(!me.name){ toast('먼저 [만나기]에서 학번과 이름을 적어 주세요'); return; } if(!d.sensor){toast('센서를 하나 골라 주세요');return;} if(!d.sit.trim()||!d.act.trim()){toast('상황과 로봇의 움직임을 적어 주세요');return;}
       const btn=$('#sendIdea'); btn.disabled=true; btn.textContent='보내는 중…';
-      try{ const res=await board.send({action:'post', num:me.num, name:me.name, group:me.group, cls:me.cls, sensor:d.sensor, situation:d.sit.trim(), act:d.act.trim(), robot:d.robot.trim()});
+      try{ const res=await board.send({action:'post', num:me.num, name:me.name, group:me.group, cls:clsWire(me.cls), sensor:d.sensor, situation:d.sit.trim(), act:d.act.trim(), robot:d.robot.trim()});
         if(!res.ok) throw new Error(res.error||'전송 실패');
         myIdeas.unshift({id:res.id, num:me.num, name:me.name, group:me.group, sensor:d.sensor, situation:d.sit.trim(), action:d.act.trim(), robot:d.robot.trim(), likes:0,wows:0,wants:0}); store.set('myIdeas',myIdeas);
         ideaDraft={sensor:d.sensor,sit:'',act:'',robot:'',seed:d.seed}; store.set('ideaDraft',ideaDraft); toast('전시관에 올렸어요! 하나 더 떠올려 볼까요? 💡'); render();
