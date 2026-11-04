@@ -543,7 +543,7 @@ const views = {
   },
   gallery(){
     return head('gallery', `<button class="btn" id="reload">🔄 새로고침</button>`) + `
-    <div class="card"><div class="row" style="justify-content:space-between"><div><h3 id="gHead">${esc(myCls())}반 아이디어 전시관</h3><p class="muted">마음에 드는 아이디어에 반응을 남겨요. 센서를 잘 살린 아이디어엔 👍, 기발하면 ❤️, 만들고 싶으면 🤖!${board.v>=2?'<br>💬 댓글로 친구 아이디어의 <b>칭찬할 점</b>·<b>인상 깊은 점</b>·<b>좋은 의견</b>을 남겨 줘요.':''}</p></div></div>
+    <div class="card"><div class="row" style="justify-content:space-between"><div><h3 id="gHead">${esc(myCls())}반 아이디어 전시관</h3><p class="muted">마음에 드는 아이디어에 반응을 남겨요. 센서를 잘 살린 아이디어엔 👍, 기발하면 ❤️, 만들고 싶으면 🤖!<span id="gCmtTip" ${board.v>=2?'':'hidden'}><br>💬 댓글로 친구 아이디어의 <b>칭찬할 점</b>·<b>인상 깊은 점</b>·<b>좋은 의견</b>을 남겨 줘요.</span></p></div></div>
       ${teacher?'<div class="chips" style="margin-top:10px" id="clsChips"></div>':''}
       <div class="chips" style="margin-top:10px" id="filterChips"><button type="button" class="chip ${gFilter==='all'?'on':''}" data-s="all">전체</button>${SKEY.map(k=>sensorChip(k,gFilter===k)).join('')}</div></div>
     <div class="stat" id="gStat"></div>
@@ -673,6 +673,7 @@ async function loadGallery(){
   const cc=$('#clsChips'); if(cc){ const all=[...new Set(posts.map(p=>normCls(p.cls)).filter(Boolean))].sort(); if(!all.includes(myCls())) all.unshift(myCls());
     cc.innerHTML = `<span class="tiny" style="align-self:center">선생님: 반 고르기</span>` + all.map(c=>`<button type="button" class="chip ${view===c?'on':''}" data-cls="${esc(c)}">${esc(c)}반</button>`).join('') + `<button type="button" class="chip ${view==='all'?'on':''}" data-cls="all">전체</button>`;
     cc.querySelectorAll('[data-cls]').forEach(b=>b.onclick=()=>{ gCls=b.dataset.cls; loadGallery(); }); }
+  const ct=$('#gCmtTip'); if(ct) ct.hidden = !(board.v>=2);
   posts = posts.filter(inCls); const gh=$('#gHead'); if(gh) gh.textContent = (view==='all'?'전체 반':view+'반')+' 아이디어 전시관';
   const shown = posts.filter(p=>gFilter==='all'||p.sensor===gFilter).filter(p=>teacher||!p.hidden);
   const stat=$('#gStat'); if(stat){ stat.innerHTML = `<div><b>${posts.filter(p=>!p.hidden).length}</b><span>아이디어</span></div>`+SKEY.map(k=>`<div><b>${posts.filter(p=>p.sensor===k&&!p.hidden).length}</b><span>${SENSORS[k].icon} ${SENSORS[k].name}</span></div>`).join(''); }
